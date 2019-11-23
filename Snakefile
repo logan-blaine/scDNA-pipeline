@@ -45,6 +45,7 @@ rule bwa_map:
 rule merge_ubam:
     input:
         ref = config['reference'],
+        ref_dict = config['reference'].rsplit(".",1)[0]+".dict",
         ubam = "ubams/{sample}.bam",
         bam = "mapped_reads/{sample}.bam"
     output:
@@ -84,3 +85,14 @@ rule sort_bam:
     shell:
         "{gatk} SortSam -I {input} -O {output} -SO {params.so} "
         " --CREATE_INDEX 2>{log}"
+
+rule create_reference_dict:
+    input:
+        config['reference']
+    output:
+        config['reference'].rsplit(".",1)[0]+".dict"
+    log:
+        "logs/gatk/CreateSequenceDictionary/{sample}.log"
+        threads: 1
+    shell:
+        "{gatk} CreateSequenceDictionary -I {input} -O {output} 2>{log}"

@@ -94,4 +94,4 @@ rule create_reference_dict:
         "logs/gatk/CreateSequenceDictionary/{reference}.log"
     threads: 1
     shell:
-        "{gatk} CreateSequenceDictionary -I {input} -O {output} 2>{log}"
+        "{gatk} CreateSequenceDictionary -R {input} -O {output} 2>{log}"

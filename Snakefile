@@ -1,4 +1,4 @@
-gatk = 'gatk --java-options "-Xmx4G"'
+gatk = 'gatk --java-options "-Xmx14G"'
 
 
 def get_rg(wildcards):
@@ -7,7 +7,7 @@ def get_rg(wildcards):
 
 def get_fastqs_for_sample_id(wildcards):
     rg = get_rg(wildcards)
-    return {'fq' + i: f'data/{rg}.unmapped.{i}.fastq.gz' for i in ['1', '2']}
+    return {f'fq{i}': f'data/{rg}.unmapped.{i}.fastq.gz' for i in ['1', '2']}
 
 
 rule all:
@@ -24,10 +24,11 @@ rule fastq_to_ubam:
         platform = "illumina"
     log:
         "logs/gatk/FastqToSam/{sample}.log"
+    threads: 1
     shell:
         "{gatk} FastqToSam -F1 {input.fq1} -F2 {input.fq2} -O {output} "
         "-SM {wildcards.sample} -LB {wildcards.sample} "
-        "-RG {params.rg} -PU {params.rg} -PL {params.platform} 2>&1 >{log}"
+        "-RG {params.rg} -PU {params.rg} -PL {params.platform} 2>{log}"
 
 rule bwa_map:
     input:
@@ -50,9 +51,10 @@ rule merge_ubam:
         "merged_bams/{sample}.bam"
     log:
         "logs/gatk/MergeBamAlignment/{sample}.log"
+    threads: 1
     shell:
         "{gatk} MergeBamAlignment -R {input.ref} -O {output} "
-        "-UNMAPPED {input.ubam} -ALIGNED {input.bam} 2>&1 >{log}"
+        "-UNMAPPED {input.ubam} -ALIGNED {input.bam} 2>{log}"
 
 rule mark_duplicates:
     input:
@@ -64,9 +66,10 @@ rule mark_duplicates:
         so = "queryname"
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
+    threads: 1
     shell:
         "{gatk} MarkDuplicates -I {input} -O {output.bam} "
-        "-M {output.txt} -ASO {params.so} 2>&1 >{log}"
+        "-M {output.txt} -ASO {params.so} 2>{log}"
 
 rule sort_bam:
     input:
@@ -77,38 +80,7 @@ rule sort_bam:
         so = "coordinate"
     log:
         "logs/gatk/SortSam/{sample}.log"
+    threads: 1
     shell:
         "{gatk} SortSam -I {input} -O {output} -SO {params.so} "
-        " --CREATE_INDEX 2>&1 >{log}"
-
-
-# rule add_replace_read_groups:
-#     input:
-#         lambda wildcards: expand(
-#             "sorted_reads/{id}.bam", id=config['samples'][wildcards.sample])
-#     output:
-#         bam = "final_bams/{sample}.bam",
-#         bai = "final_bams/{sample}.bai"
-#     params:
-#         rg=get_rg,
-#         flags = "--CREATE_INDEX --VALIDATION_STRINGENCY SILENT -PL illumina"
-#     shell:
-#         "gatk AddOrReplaceReadGroups -I {input} -O {output.bam} {params.flags} "
-#         "-ID {params.rg} -PU {params.rg} -SM {wildcards.sample} -LB {wildcards.sample}"
-
-
-# rule samtools_sort:
-#     input:
-#         "mapped_reads/{sample}.bam"
-#     output:
-#         "sorted_reads/{sample}.bam"
-#     shell:
-#         "samtools sort -T sorted_reads/{wildcards.sample} {input} -o {output}"
-#
-# rule samtools_index:
-#     input:
-#         "sorted_reads/{sample}.bam"
-#     output:
-#         "sorted_reads/{sample}.bam.bai"
-#     shell:
-#         "samtools index {input}"
+        " --CREATE_INDEX 2>{log}"

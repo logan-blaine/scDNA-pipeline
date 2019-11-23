@@ -1,6 +1,5 @@
 gatk = 'gatk --java-options "-Xmx14G"'
 
-
 def get_rg(wildcards):
     return config['samples'][wildcards.sample]
 
@@ -90,9 +89,9 @@ rule create_reference_dict:
     input:
         config['reference']
     output:
-        config['reference'].rsplit(".",1)[0]+".dict"
+        {reference}.dict
     log:
-        "logs/gatk/CreateSequenceDictionary/{config['reference']}.log"
+        "logs/gatk/CreateSequenceDictionary/{reference}.log"
     threads: 1
     shell:
         "{gatk} CreateSequenceDictionary -I {input} -O {output} 2>{log}"

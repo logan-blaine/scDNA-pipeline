@@ -1,4 +1,6 @@
 gatk = 'gatk --java-options "-Xmx14G"'
+picard_max_records = '--MAX_RECORDS_IN_RAM 2000000'
+
 
 def get_rg(wildcards):
     return config['samples'][wildcards.sample]
@@ -17,7 +19,7 @@ rule fastq_to_ubam:
     input:
         unpack(get_fastqs_for_sample_id)
     output:
-        "ubams/{sample}.bam"
+        temp("ubams/{sample}.bam")
     params:
         rg = get_rg,
         platform = "illumina"
@@ -25,7 +27,8 @@ rule fastq_to_ubam:
         "logs/gatk/FastqToSam/{sample}.log"
     threads: 1
     shell:
-        "{gatk} FastqToSam -F1 {input.fq1} -F2 {input.fq2} -O {output} "
+        "{gatk} FastqToSam {picard_max_records} "
+        "-F1 {input.fq1} -F2 {input.fq2} -O {output} "
         "-SM {wildcards.sample} -LB {wildcards.sample} "
         "-RG {params.rg} -PU {params.rg} -PL {params.platform} 2>{log}"
 
@@ -34,7 +37,7 @@ rule bwa_map:
         config['reference'],
         unpack(get_fastqs_for_sample_id)
     output:
-        "mapped_reads/{sample}.bam"
+        temp("mapped_reads/{sample}.bam")
     log:
         "logs/bwa_mem/{sample}.log"
     threads: 4
@@ -44,13 +47,14 @@ rule bwa_map:
 rule merge_ubam:
     input:
         ref = config['reference'],
-        ref_dict = config['reference'].rsplit(".",1)[0]+".dict",
+        ref_dict = config['reference'].rsplit(".", 1)[0] + ".dict",
         ubam = "ubams/{sample}.bam",
         bam = "mapped_reads/{sample}.bam"
     output:
-        "merged_bams/{sample}.bam"
+        temp("merged_bams/{sample}.bam")
     log:
         "logs/gatk/MergeBamAlignment/{sample}.log"
+    group: "postprocessing"
     threads: 1
     shell:
         "{gatk} MergeBamAlignment -R {input.ref} -O {output} "
@@ -60,36 +64,40 @@ rule mark_duplicates:
     input:
         "merged_bams/{sample}.bam"
     output:
-        bam = "deduped_bams/{sample}.bam",
+        bam = temp("deduped_bams/{sample}.bam"),
         txt = "metrics/{sample}.dup_metrics.txt"
     params:
         so = "queryname"
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
     threads: 1
+    group: "postprocessing"
     shell:
-        "{gatk} MarkDuplicates -I {input} -O {output.bam} "
+        "{gatk} MarkDuplicates {picard_max_records}"
+        " -I {input} -O {output.bam} "
         "-M {output.txt} -ASO {params.so} 2>{log}"
 
 rule sort_bam:
     input:
         "deduped_bams/{sample}.bam"
     output:
-        "processed_bams/{sample}.bam",
+        protected("processed_bams/{sample}.bam")
     params:
         so = "coordinate"
     log:
         "logs/gatk/SortSam/{sample}.log"
     threads: 1
+    group: "postprocessing"
     shell:
-        "{gatk} SortSam -I {input} -O {output} -SO {params.so} "
+        "{gatk} SortSam {picard_max_records}"
+        " -I {input} -O {output} -SO {params.so} "
         " --CREATE_INDEX 2>{log}"
 
 rule create_reference_dict:
     input:
         config['reference']
     output:
-        "{reference}.dict"
+        protected("{reference}.dict")
     log:
         "logs/gatk/CreateSequenceDictionary/{reference}.log"
     threads: 1

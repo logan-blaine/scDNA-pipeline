@@ -1,48 +1,95 @@
-configfile: "config.yaml"
+configfile: 'config.yaml'
+gatk = 'gatk --java-options "-Xmx4G"'
+
+def get_fastqs_for_sample_id(wildcards):
+    fastqs = {fq1: "data/{wildcards.sample}.unmapped.1.fastq.gz",
+              fq2: "data/{wildcards.sample}.unmapped.1.fastq.gz"}
+    return fastqs
+
+
+def get_rg(wildcards):
+    return config['samples'][wildcards.sample]
 
 
 rule all:
     input:
-        expand("final_bams/{sample}.bam", sample=config['samples'])
+        expand("processed_bams/{sample}.bam", sample=config['samples'])
 
-rule add_replace_read_groups:
+rule fastq_to_ubam:
     input:
-        lambda wildcards: expand("sorted_reads/{id}.bam", id=config['samples'][wildcards.sample])
+        get_fastqs_for_sample_id
     output:
-        bam="final_bams/{sample}.bam",
-        bai="final_bams/{sample}.bai"
+        "ubams/{sample}.bam"
     params:
-        rg=lambda wildcards: config['samples'][wildcards.sample],
-        flags="--CREATE_INDEX --VALIDATION_STRINGENCY SILENT -PL illumina"
+        rg = get_rg,
+        platform = "illumina"
     shell:
-        "gatk AddOrReplaceReadGroups -I {input} -O {output.bam} {params.flags} "
-        "-ID {params.rg} -PU {params.rg} -SM {wildcards.sample} -LB {wildcards.sample}"
+        "{gatk} FastqToSam -F1 {input.fq1} -F2 {input.fq2} -O {output} "
+        "-SM {wildcards.sample} -LB {wildcards.sample} "
+        "-RG {params.rg} -PU {params.rg} -PL {params.platform}"
 
 rule bwa_map:
     input:
         config['reference'],
-        expand("data/{{sample}}.unmapped.{lane}.fastq.gz", lane=[1,2])
+        get_fastqs_for_sample_id
     output:
-        temp("mapped_reads/{sample}.bam")
+        "mapped_reads/{sample}.bam"
     log:
         "logs/bwa_mem/{sample}.log"
     threads: 4
     shell:
         "bwa mem -t {threads} {input} | samtools view -b - > {output} 2> {log}"
 
-rule samtools_sort:
+rule merge_ubam:
     input:
-        "mapped_reads/{sample}.bam"
+        ref = config['reference'],
+        ubam = "ubams/{sample}.bam",
+        bam = "mapped_reads/{sample}.bam"
     output:
-        "sorted_reads/{sample}.bam"
+        "merged_bams/{sample}.bam"
     shell:
-        "samtools sort -T sorted_reads/{wildcards.sample} {input} -o {output}"
+        "{gatk} MergeBamAlignment -R {input.reference} "
+        "-UNMAPPED {input.ubam} -ALIGNED {input.bam} -O {output}"
 
-rule samtools_index:
+rule mark_duplicates:
     input:
-        "sorted_reads/{sample}.bam"
+        "merged_bams/{sample}.bam"
     output:
-        "sorted_reads/{sample}.bam.bai"
+        bam = "processed_bams/{sample}.bam"
+        txt = "metrics/{sample}.dup_metrics.txt"
+    params:
+        so: "queryname"
     shell:
-        "samtools index {input}"
+        "{gatk} MarkDuplicates -I {input} -O {output.bam} "
+        "-M {output.txt} -ASO {params.so}"
 
+# rule add_replace_read_groups:
+#     input:
+#         lambda wildcards: expand(
+#             "sorted_reads/{id}.bam", id=config['samples'][wildcards.sample])
+#     output:
+#         bam = "final_bams/{sample}.bam",
+#         bai = "final_bams/{sample}.bai"
+#     params:
+#         rg=get_rg,
+#         flags = "--CREATE_INDEX --VALIDATION_STRINGENCY SILENT -PL illumina"
+#     shell:
+#         "gatk AddOrReplaceReadGroups -I {input} -O {output.bam} {params.flags} "
+#         "-ID {params.rg} -PU {params.rg} -SM {wildcards.sample} -LB {wildcards.sample}"
+
+
+# rule samtools_sort:
+#     input:
+#         "mapped_reads/{sample}.bam"
+#     output:
+#         "sorted_reads/{sample}.bam"
+#     shell:
+#         "samtools sort -T sorted_reads/{wildcards.sample} {input} -o {output}"
+#
+# rule samtools_index:
+#     input:
+#         "sorted_reads/{sample}.bam"
+#     output:
+#         "sorted_reads/{sample}.bam.bai"
+#     shell:
+#         "samtools index {input}"

@@ -1,0 +1,4 @@
+reference: "references/GRCm38.p6.genome.fa"
+
+samples:
+  test1: test

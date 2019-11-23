@@ -92,7 +92,7 @@ rule create_reference_dict:
     output:
         config['reference'].rsplit(".",1)[0]+".dict"
     log:
-        "logs/gatk/CreateSequenceDictionary/{sample}.log"
+        "logs/gatk/CreateSequenceDictionary/{config['reference']}.log"
     threads: 1
     shell:
         "{gatk} CreateSequenceDictionary -I {input} -O {output} 2>{log}"

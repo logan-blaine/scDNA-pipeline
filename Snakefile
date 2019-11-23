@@ -22,10 +22,12 @@ rule fastq_to_ubam:
     params:
         rg = get_rg,
         platform = "illumina"
+    log:
+        "logs/gatk/FastqToSam/{sample}.log"
     shell:
         "{gatk} FastqToSam -F1 {input.fq1} -F2 {input.fq2} -O {output} "
         "-SM {wildcards.sample} -LB {wildcards.sample} "
-        "-RG {params.rg} -PU {params.rg} -PL {params.platform}"
+        "-RG {params.rg} -PU {params.rg} -PL {params.platform} 2>&1 >{log}"
 
 rule bwa_map:
     input:
@@ -46,21 +48,39 @@ rule merge_ubam:
         bam = "mapped_reads/{sample}.bam"
     output:
         "merged_bams/{sample}.bam"
+    log:
+        "logs/gatk/MergeBamAlignment/{sample}.log"
     shell:
-        "{gatk} MergeBamAlignment -R {input.ref} "
-        "-UNMAPPED {input.ubam} -ALIGNED {input.bam} -O {output}"
+        "{gatk} MergeBamAlignment -R {input.ref} -O {output} "
+        "-UNMAPPED {input.ubam} -ALIGNED {input.bam} 2>&1 >{log}"
 
 rule mark_duplicates:
     input:
         "merged_bams/{sample}.bam"
     output:
-        bam = "processed_bams/{sample}.bam",
+        bam = "deduped_bams/{sample}.bam",
         txt = "metrics/{sample}.dup_metrics.txt"
     params:
         so = "queryname"
+    log:
+        "logs/gatk/MarkDuplicates/{sample}.log"
     shell:
         "{gatk} MarkDuplicates -I {input} -O {output.bam} "
-        "-M {output.txt} -ASO {params.so}"
+        "-M {output.txt} -ASO {params.so} 2>&1 >{log}"
+
+rule sort_bam:
+    input:
+        "deduped_bams/{sample}.bam"
+    output:
+        "processed_bams/{sample}.bam",
+    params:
+        so = "coordinate"
+    log:
+        "logs/gatk/SortSam/{sample}.log"
+    shell:
+        "{gatk} SortSam -I {input} -O {output} -SO {params.so} "
+        " --CREATE_INDEX 2>&1 >{log}"
+
 
 # rule add_replace_read_groups:
 #     input:
@@ -92,4 +112,3 @@ rule mark_duplicates:
 #         "sorted_reads/{sample}.bam.bai"
 #     shell:
 #         "samtools index {input}"
-

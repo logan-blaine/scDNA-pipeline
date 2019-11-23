@@ -1,14 +1,13 @@
-configfile: 'config.yaml'
 gatk = 'gatk --java-options "-Xmx4G"'
-
-def get_fastqs_for_sample_id(wildcards):
-    fastqs = {fq1: "data/{wildcards.sample}.unmapped.1.fastq.gz",
-              fq2: "data/{wildcards.sample}.unmapped.1.fastq.gz"}
-    return fastqs
 
 
 def get_rg(wildcards):
     return config['samples'][wildcards.sample]
+
+
+def get_fastqs_for_sample_id(wildcards):
+    rg = get_rg(wildcards)
+    return {'fq' + i: f'data/{rg}.unmapped.{i}.fastq.gz' for i in ['1', '2']}
 
 
 rule all:
@@ -17,7 +16,7 @@ rule all:
 
 rule fastq_to_ubam:
     input:
-        get_fastqs_for_sample_id
+        unpack(get_fastqs_for_sample_id)
     output:
         "ubams/{sample}.bam"
     params:
@@ -31,14 +30,14 @@ rule fastq_to_ubam:
 rule bwa_map:
     input:
         config['reference'],
-        get_fastqs_for_sample_id
+        unpack(get_fastqs_for_sample_id)
     output:
         "mapped_reads/{sample}.bam"
     log:
         "logs/bwa_mem/{sample}.log"
     threads: 4
     shell:
-        "bwa mem -t {threads} {input} | samtools view -b - > {output} 2> {log}"
+        "bwa mem -t {threads} {input} 2> {log} | samtools view -b - > {output}"
 
 rule merge_ubam:
     input:
@@ -48,17 +47,17 @@ rule merge_ubam:
     output:
         "merged_bams/{sample}.bam"
     shell:
-        "{gatk} MergeBamAlignment -R {input.reference} "
+        "{gatk} MergeBamAlignment -R {input.ref} "
         "-UNMAPPED {input.ubam} -ALIGNED {input.bam} -O {output}"
 
 rule mark_duplicates:
     input:
         "merged_bams/{sample}.bam"
     output:
-        bam = "processed_bams/{sample}.bam"
+        bam = "processed_bams/{sample}.bam",
         txt = "metrics/{sample}.dup_metrics.txt"
     params:
-        so: "queryname"
+        so = "queryname"
     shell:
         "{gatk} MarkDuplicates -I {input} -O {output.bam} "
         "-M {output.txt} -ASO {params.so}"
@@ -93,3 +92,4 @@ rule mark_duplicates:
 #         "sorted_reads/{sample}.bam.bai"
 #     shell:
 #         "samtools index {input}"
+

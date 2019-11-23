@@ -89,7 +89,7 @@ rule create_reference_dict:
     input:
         config['reference']
     output:
-        {reference}.dict
+        "{reference}.dict"
     log:
         "logs/gatk/CreateSequenceDictionary/{reference}.log"
     threads: 1

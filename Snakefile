@@ -84,7 +84,8 @@ rule sort_bam:
     input:
         "deduped_bams/{sample}.bam"
     output:
-        protected("processed_bams/{sample}.bam")
+        bam=protected("processed_bams/{sample}.bam")
+        bai=protected("processed_bams/{sample}.bai")
     params:
         so = "coordinate"
     log:
@@ -93,16 +94,5 @@ rule sort_bam:
     group: "postprocessing"
     shell:
         "{gatk} SortSam {picard_max_records} {tmp_dir}"
-        " -I {input} -O {output} -SO {params.so} "
+        " -I {input} -O {output.bam} -SO {params.so} "
         " --CREATE_INDEX 2>{log}"
-
-# rule create_reference_dict:
-#     input:
-#         config['reference']
-#     output:
-#         protected("{reference}.dict")
-#     log:
-#         "logs/gatk/CreateSequenceDictionary/{reference}.log"
-#     threads: 1
-#     shell:
-#         "{gatk} CreateSequenceDictionary -R {input} -O {output} 2>{log}"

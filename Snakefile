@@ -42,7 +42,7 @@ rule bwa_map:
         temp("mapped_reads/{sample}.bam")
     log:
         "logs/bwa_mem/{sample}.log"
-    threads: 4
+    threads: 16
     shell:
         "bwa mem -t {threads} {input} 2> {log} | samtools view -b - > {output}"
 

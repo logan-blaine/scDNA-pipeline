@@ -27,7 +27,6 @@ rule fastq_to_ubam:
     log:
         "logs/gatk/FastqToSam/{sample}.log"
     threads: 1
-    shadow: 'minimal'
     shell:
         "{gatk} FastqToSam {picard_max_records} {tmp_dir} "
         "-F1 {input.fq1} -F2 {input.fq2} -O {output} "
@@ -58,7 +57,6 @@ rule merge_ubam:
         "logs/gatk/MergeBamAlignment/{sample}.log"
     group: "postprocessing"
     threads: 1
-    shadow: 'minimal'
     shell:
         "{gatk} MergeBamAlignment {picard_max_records} {tmp_dir} "
         "-R {input.ref} -O {output} "
@@ -75,7 +73,6 @@ rule mark_duplicates:
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
     threads: 1
-    shadow: 'minimal'
     group: "postprocessing"
     shell:
         "{gatk} MarkDuplicates {picard_max_records} {tmp_dir} "
@@ -93,7 +90,6 @@ rule sort_bam:
     log:
         "logs/gatk/SortSam/{sample}.log"
     threads: 1
-    shadow: 'minimal'
     group: "postprocessing"
     shell:
         "{gatk} SortSam {picard_max_records} {tmp_dir}"

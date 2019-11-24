@@ -78,10 +78,10 @@ rule mark_duplicates:
     shadow: minimal
     group: "postprocessing"
     shell:
-    "{gatk} MarkDuplicates {picard_max_records} {tmp_dir} "
-    "--OPTICAL_DUPLICATE_PIXEL_DISTANCE 2500 "
-    "-I {input} -O {output.bam} "
-    "-M {output.txt} -ASO {params.so} 2>{log}"
+        "{gatk} MarkDuplicates {picard_max_records} {tmp_dir} "
+        "--OPTICAL_DUPLICATE_PIXEL_DISTANCE 2500 "
+        "-I {input} -O {output.bam} "
+        "-M {output.txt} -ASO {params.so} 2>{log}"
 
 rule sort_bam:
     input:

@@ -100,13 +100,13 @@ rule sort_bam:
         " -I {input} -O {output} -SO {params.so} "
         " --CREATE_INDEX 2>{log}"
 
-rule create_reference_dict:
-    input:
-        config['reference']
-    output:
-        protected("{reference}.dict")
-    log:
-        "logs/gatk/CreateSequenceDictionary/{reference}.log"
-    threads: 1
-    shell:
-        "{gatk} CreateSequenceDictionary -R {input} -O {output} 2>{log}"
+# rule create_reference_dict:
+#     input:
+#         config['reference']
+#     output:
+#         protected("{reference}.dict")
+#     log:
+#         "logs/gatk/CreateSequenceDictionary/{reference}.log"
+#     threads: 1
+#     shell:
+#         "{gatk} CreateSequenceDictionary -R {input} -O {output} 2>{log}"

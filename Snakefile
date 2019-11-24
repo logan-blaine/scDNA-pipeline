@@ -1,5 +1,6 @@
 gatk = 'gatk --java-options "-Xmx14G"'
 picard_max_records = '--MAX_RECORDS_IN_RAM 2000000'
+tmp_dir = '--TMP_DIR tmp'
 
 
 def get_rg(wildcards):
@@ -26,8 +27,9 @@ rule fastq_to_ubam:
     log:
         "logs/gatk/FastqToSam/{sample}.log"
     threads: 1
+    shadow: minimal
     shell:
-        "{gatk} FastqToSam {picard_max_records} "
+        "{gatk} FastqToSam {picard_max_records} {tmp_dir} "
         "-F1 {input.fq1} -F2 {input.fq2} -O {output} "
         "-SM {wildcards.sample} -LB {wildcards.sample} "
         "-RG {params.rg} -PU {params.rg} -PL {params.platform} 2>{log}"
@@ -56,8 +58,10 @@ rule merge_ubam:
         "logs/gatk/MergeBamAlignment/{sample}.log"
     group: "postprocessing"
     threads: 1
+    shadow: minimal
     shell:
-        "{gatk} MergeBamAlignment -R {input.ref} -O {output} "
+        "{gatk} MergeBamAlignment {picard_max_records} {tmp_dir} "
+        "-R {input.ref} -O {output} "
         "-UNMAPPED {input.ubam} -ALIGNED {input.bam} 2>{log}"
 
 rule mark_duplicates:
@@ -71,11 +75,13 @@ rule mark_duplicates:
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
     threads: 1
+    shadow: minimal
     group: "postprocessing"
     shell:
-        "{gatk} MarkDuplicates {picard_max_records}"
-        " -I {input} -O {output.bam} "
-        "-M {output.txt} -ASO {params.so} 2>{log}"
+    "{gatk} MarkDuplicates {picard_max_records} {tmp_dir} "
+    "--OPTICAL_DUPLICATE_PIXEL_DISTANCE 2500 "
+    "-I {input} -O {output.bam} "
+    "-M {output.txt} -ASO {params.so} 2>{log}"
 
 rule sort_bam:
     input:
@@ -87,9 +93,10 @@ rule sort_bam:
     log:
         "logs/gatk/SortSam/{sample}.log"
     threads: 1
+    shadow: minimal
     group: "postprocessing"
     shell:
-        "{gatk} SortSam {picard_max_records}"
+        "{gatk} SortSam {picard_max_records} {tmp_dir}"
         " -I {input} -O {output} -SO {params.so} "
         " --CREATE_INDEX 2>{log}"
 

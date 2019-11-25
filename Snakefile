@@ -27,6 +27,11 @@ def get_fastqs_for_sample_id(wildcards):
 rule all:
     input:
         expand("processed_bams/{sample}.bam", sample=samples.index)
+        expand("processed_bams/{sample}.bai", sample=samples.index)
+
+rule align:
+    input:
+        expand("mapped_reads/{sample}.bam", sample=samples.index)
 
 
 rule bwa_map:

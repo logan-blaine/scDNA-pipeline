@@ -26,7 +26,7 @@ def get_fastqs_for_sample_id(wildcards):
 
 rule all:
     input:
-        expand("processed_bams/{sample}.bam", sample=samples.index)
+        expand("processed_bams/{sample}.bam", sample=samples.index),
         expand("processed_bams/{sample}.bai", sample=samples.index)
 
 rule align:
@@ -53,8 +53,8 @@ rule fastq_to_ubam:
     output:
         temp("ubams/{sample}.bam")
     params:
-        rg=get_rg,
-        platform="illumina"
+        rg = get_rg,
+        platform = "illumina"
     log:
         "logs/gatk/FastqToSam/{sample}.log"
     group: "postprocessing"
@@ -68,10 +68,10 @@ rule fastq_to_ubam:
 
 rule merge_ubam:
     input:
-        ref=config['reference'],
-        ref_dict=config['reference'].rsplit(".", 1)[0] + ".dict",
-        ubam="ubams/{sample}.bam",
-        bam="mapped_reads/{sample}.bam"
+        ref = config['reference'],
+        ref_dict = config['reference'].rsplit(".", 1)[0] + ".dict",
+        ubam = "ubams/{sample}.bam",
+        bam = "mapped_reads/{sample}.bam"
     output:
         temp("merged_bams/{sample}.bam")
     log:
@@ -86,10 +86,10 @@ rule mark_duplicates:
     input:
         "merged_bams/{sample}.bam"
     output:
-        bam=temp("deduped_bams/{sample}.bam"),
-        txt="metrics/{sample}.dup_metrics.txt"
+        bam = temp("deduped_bams/{sample}.bam"),
+        txt = "metrics/{sample}.dup_metrics.txt"
     params:
-        so="queryname"
+        so = "queryname"
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
     threads: 1
@@ -104,10 +104,10 @@ rule sort_bam:
     input:
         "deduped_bams/{sample}.bam"
     output:
-        bam=protected("processed_bams/{sample}.bam"),
-        bai=protected("processed_bams/{sample}.bai")
+        bam = protected("processed_bams/{sample}.bam"),
+        bai = protected("processed_bams/{sample}.bai")
     params:
-        so="coordinate"
+        so = "coordinate"
     log:
         "logs/gatk/SortSam/{sample}.log"
     threads: 1

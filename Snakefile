@@ -12,20 +12,21 @@ validate(samples, "samples.schema.yaml")
 
 def get_rg(wildcards):
     prefix = samples.loc[wildcards.sample]['prefix']
-    match=re.match(r'[^A-Z]*([A-Z]+.[0-9]+)', prefix)
+    match = re.match(r'[^A-Z]*([A-Z]+.[0-9]+)', prefix)
     return match.group(1)
 
 
 def get_fastqs_for_sample_id(wildcards):
     prefix = samples.loc[wildcards.sample]['prefix']
     fq_dir = config['fastq_dir']
-    return {fq1: os.path.join(prefix, f'{rg}.unmapped.1.fastq.gz'
-            fq2: os.path.join(prefix, f'{rg}.unmapped.2.fastq.gz'}
+    fastqs = {'fq1': os.path.join(fq_dir, f'{prefix}.unmapped.1.fastq.gz'),
+              'fq2': os.path.join(fq_dir, f'{prefix}.unmapped.2.fastq.gz')}
+    return fastqs
 
 
 rule all:
     input:
-        expand("processed_bams/{sample}.bam", sample=config['samples'])
+        expand("processed_bams/{sample}.bam", sample=samples.index)
 
 
 rule bwa_map:
@@ -98,7 +99,7 @@ rule sort_bam:
     input:
         "deduped_bams/{sample}.bam"
     output:
-        bam=protected("processed_bams/{sample}.bam")
+        bam=protected("processed_bams/{sample}.bam"),
         bai=protected("processed_bams/{sample}.bai")
     params:
         so="coordinate"

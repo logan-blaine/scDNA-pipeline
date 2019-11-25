@@ -3,3 +3,4 @@
 !.gitignore
 !Snakefile
 !*.yaml
+!samples.tsv

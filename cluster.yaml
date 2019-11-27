@@ -1,0 +1,4 @@
+__default__:
+    mem_gb : 16
+    output : "logs/cluster/{rule}.{wildcards}.out"
+    error : "logs/cluster/{rule}.{wildcards}.err"

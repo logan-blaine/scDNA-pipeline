@@ -1,5 +1,6 @@
 __default__:
   mem_gb :   16
+  cpus: 1
   output :   'logs/cluster/{rule}.{wildcards}.out'
   error :    'logs/cluster/{rule}.{wildcards}.err'
 
@@ -7,6 +8,9 @@ all:
   output :   'logs/cluster/all.out'
   output :   'logs/cluster/all.err'
 
-all:
+align:
   output :   'logs/cluster/align.out'
   output :   'logs/cluster/align.err'
+
+bwa_map:
+  cpus: 8

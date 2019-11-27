@@ -57,7 +57,6 @@ rule fastq_to_ubam:
         platform = "illumina"
     log:
         "logs/gatk/FastqToSam/{sample}.log"
-    threads: 1
     shell:
         "{GATK} FastqToSam {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
         "-F1 {input.fq1} -F2 {input.fq2} -O {output} "
@@ -75,7 +74,6 @@ rule merge_ubam:
         temp("merged_bams/{sample}.bam")
     log:
         "logs/gatk/MergeBamAlignment/{sample}.log"
-    threads: 1
     shell:
         "{GATK} MergeBamAlignment {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
         "-R {input.ref} -O {output} "
@@ -91,7 +89,6 @@ rule mark_duplicates:
         so = "queryname"
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
-    threads: 1
     shell:
         "{GATK} MarkDuplicates {PICARD_TMP_DIR} "
         "--OPTICAL_DUPLICATE_PIXEL_DISTANCE 2500 "
@@ -108,7 +105,6 @@ rule sort_bam:
         so = "coordinate"
     log:
         "logs/gatk/SortSam/{sample}.log"
-    threads: 1
     shell:
         "{GATK} SortSam {PICARD_MAX_RECORDS} {PICARD_TMP_DIR}"
         " -I {input} -O {output.bam} -SO {params.so} "

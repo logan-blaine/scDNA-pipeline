@@ -93,7 +93,7 @@ rule mark_duplicates:
         "logs/gatk/MarkDuplicates/{sample}.log"
     shell:
         "{GATK} MarkDuplicates {PICARD_TMP_DIR} "
-        "--OPTICAL_DUPLICATE_PIXEL_DISTANCE  {params.px_dist}"
+        "--OPTICAL_DUPLICATE_PIXEL_DISTANCE  {params.px_dist} "
         "-I {input} -O {output.bam} "
         "-M {output.txt} -ASO {params.so} 2>{log}"
 
@@ -108,7 +108,7 @@ rule sort_bam:
     log:
         "logs/gatk/SortSam/{sample}.log"
     shell:
-        "{GATK} SortSam {PICARD_MAX_RECORDS} {PICARD_TMP_DIR}"
+        "{GATK} SortSam {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
         " -I {input} -O {output.bam} -SO {params.so} "
         " --CREATE_INDEX 2>{log}"
 

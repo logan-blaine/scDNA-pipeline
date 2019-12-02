@@ -120,8 +120,11 @@ rule collect_metrics:
     output:
         "metrics/{sample}.alignment_summary_metrics.txt"
     params:
+        "--PROGRAM null"
+        "--PROGRAM CollectAlignmentSummaryMetrics ",
+        "--PROGRAM QualityScoreDistribution ",
         "--PROGRAM CollectSequencingArtifactMetrics ",
         "--PROGRAM CollectGcBiasMetrics "
     shell:
-        "java -jar picard.jar CollectMultipleMetrics {params} "
+        "{GATK} CollectMultipleMetrics {PICARD_TMP_DIR} {params} "
         "-I {input.bam} -O metrics/{wildcards.sample} -R {input.ref} "

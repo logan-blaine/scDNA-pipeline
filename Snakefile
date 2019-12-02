@@ -11,10 +11,7 @@ validate(samples, "samples.schema.yaml")
 
 
 def get_rg(wildcards):
-    prefix = samples.loc[wildcards.sample]['prefix']
-    match = re.match(r'[^A-Z]*([A-Z]+.[0-9]+)', prefix)
-    return match.group(1)
-
+    return samples.loc[wildcards.sample]['prefix']
 
 def get_fastqs_for_sample_id(wildcards):
     prefix = samples.loc[wildcards.sample]['prefix']
@@ -61,7 +58,7 @@ rule fastq_to_ubam:
         "{GATK} FastqToSam {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
         "-F1 {input.fq1} -F2 {input.fq2} -O {output} "
         "-SM {wildcards.sample} -LB {wildcards.sample} "
-        "-RG {params.rg} -PU {params.rg}.{wildcards.sample} "
+        "-RG {params.rg} -PU {params.rg} "
         "-PL {params.platform} 2>{log}"
 
 rule merge_ubam:
@@ -87,11 +84,12 @@ rule mark_duplicates:
         txt = "metrics/{sample}.dup_metrics.txt"
     params:
         so = "queryname"
+        px_dist= 2500
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
     shell:
         "{GATK} MarkDuplicates {PICARD_TMP_DIR} "
-        "--OPTICAL_DUPLICATE_PIXEL_DISTANCE 2500 "
+        "--OPTICAL_DUPLICATE_PIXEL_DISTANCE  {params.px_dist}"
         "-I {input} -O {output.bam} "
         "-M {output.txt} -ASO {params.so} 2>{log}"
 
@@ -109,3 +107,17 @@ rule sort_bam:
         "{GATK} SortSam {PICARD_MAX_RECORDS} {PICARD_TMP_DIR}"
         " -I {input} -O {output.bam} -SO {params.so} "
         " --CREATE_INDEX 2>{log}"
+
+
+rule collect_metrics:
+    input:
+        ref=config['reference'],
+        bam="processed_bams/{sample}.bam"
+    output:
+        "{sample}.alignment_summary_metrics.txt"
+    params:
+        "--PROGRAM CollectSequencingArtifactMetrics ",
+        "--PROGRAM CollectGcBiasMetrics "
+    shell:
+        "java -jar picard.jar CollectMultipleMetrics {params} "
+        "-I {input.bam} -O {wildcards.sample} -R {input.ref}

@@ -26,6 +26,8 @@ rule all:
     input:
         expand("processed_bams/{sample}.bam", sample=samples.index),
         expand("processed_bams/{sample}.bai", sample=samples.index),
+        expand("metrics/{sample}.alignment_summary_metrics.txt",
+               sample=samples.index)
 
 
 rule align:
@@ -85,7 +87,7 @@ rule mark_duplicates:
         bam = temp("deduped_bams/{sample}.bam"),
         txt = "metrics/{sample}.dup_metrics.txt"
     params:
-        so = "queryname"
+        so = "queryname",
         px_dist = 2500
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"

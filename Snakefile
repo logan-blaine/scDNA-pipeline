@@ -13,6 +13,7 @@ validate(samples, "samples.schema.yaml")
 def get_rg(wildcards):
     return samples.loc[wildcards.sample]['prefix']
 
+
 def get_fastqs_for_sample_id(wildcards):
     prefix = samples.loc[wildcards.sample]['prefix']
     fq_dir = config['fastq_dir']
@@ -24,7 +25,8 @@ def get_fastqs_for_sample_id(wildcards):
 rule all:
     input:
         expand("processed_bams/{sample}.bam", sample=samples.index),
-        expand("processed_bams/{sample}.bai", sample=samples.index)
+        expand("processed_bams/{sample}.bai", sample=samples.index),
+
 
 rule align:
     input:
@@ -84,7 +86,7 @@ rule mark_duplicates:
         txt = "metrics/{sample}.dup_metrics.txt"
     params:
         so = "queryname"
-        px_dist= 2500
+        px_dist = 2500
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
     shell:
@@ -111,13 +113,13 @@ rule sort_bam:
 
 rule collect_metrics:
     input:
-        ref=config['reference'],
-        bam="processed_bams/{sample}.bam"
+        ref = config['reference'],
+        bam = "processed_bams/{sample}.bam"
     output:
-        "{sample}.alignment_summary_metrics.txt"
+        "metrics/{sample}.alignment_summary_metrics.txt"
     params:
         "--PROGRAM CollectSequencingArtifactMetrics ",
         "--PROGRAM CollectGcBiasMetrics "
     shell:
         "java -jar picard.jar CollectMultipleMetrics {params} "
-        "-I {input.bam} -O {wildcards.sample} -R {input.ref}
+        "-I {input.bam} -O metrics/{wildcards.sample} -R {input.ref} "

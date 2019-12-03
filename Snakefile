@@ -93,7 +93,7 @@ rule mark_duplicates:
         "logs/gatk/MarkDuplicates/{sample}.log"
     shell:
         "{GATK} MarkDuplicates {PICARD_TMP_DIR} "
-        "--OPTICAL_DUPLICATE_PIXEL_DISTANCE  {params.px_dist} "
+        "--OPTICAL_DUPLICATE_PIXEL_DISTANCE {params.px_dist} "
         "-I {input} -O {output.bam} "
         "-M {output.txt} -ASO {params.so} 2>{log}"
 
@@ -125,6 +125,8 @@ rule collect_metrics:
         "--PROGRAM QualityScoreDistribution ",
         "--PROGRAM CollectSequencingArtifactMetrics ",
         "--PROGRAM CollectGcBiasMetrics "
+    log:
+        "logs/gatk/collect_metrics/{sample}.log"
     shell:
         "{GATK} CollectMultipleMetrics {PICARD_TMP_DIR} {params} "
-        "-I {input.bam} -O metrics/{wildcards.sample} -R {input.ref} "
+        "-I {input.bam} -O metrics/{wildcards.sample} -R {input.ref} 2>{log}"

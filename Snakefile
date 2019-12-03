@@ -120,7 +120,7 @@ rule collect_metrics:
     output:
         "metrics/{sample}.alignment_summary_metrics.txt"
     params:
-        "--PROGRAM null"
+        "--PROGRAM null "
         "--PROGRAM CollectAlignmentSummaryMetrics ",
         "--PROGRAM QualityScoreDistribution ",
         "--PROGRAM CollectSequencingArtifactMetrics ",

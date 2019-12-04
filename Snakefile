@@ -15,7 +15,7 @@ def get_rg(wildcards):
 
 
 def get_fastqs_for_sample_id(wildcards):
-    prefix = samples.loc[wildcards.sample]['prefix']
+    prefix = get_rg(wildcards)
     fq_dir = config['fastq_dir']
     fastqs = {'fq1': os.path.join(fq_dir, f'{prefix}.unmapped.1.fastq.gz'),
               'fq2': os.path.join(fq_dir, f'{prefix}.unmapped.2.fastq.gz')}
@@ -26,7 +26,7 @@ rule all:
     input:
         expand("processed_bams/{sample}.bam", sample=samples.index),
         expand("processed_bams/{sample}.bai", sample=samples.index),
-        expand("metrics/{sample}.alignment_summary_metrics.txt",
+        expand("metrics/{sample}.alignment_summary_metrics",
                sample=samples.index)
 
 

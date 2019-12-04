@@ -1,7 +1,7 @@
 __default__:
   mem_gb :   16
   cpus: 1
-  output: "logs/cluster/slurm-%j.out"
+  output: "logs/cluster/%j.log"
 
 bwa_map:
   cpus: 8

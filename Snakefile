@@ -118,7 +118,7 @@ rule collect_metrics:
         ref = config['reference'],
         bam = "processed_bams/{sample}.bam"
     output:
-        "metrics/{sample}.alignment_summary_metrics.txt"
+        "metrics/{sample}.alignment_summary_metrics"
     params:
         "--PROGRAM null "
         "--PROGRAM CollectAlignmentSummaryMetrics ",

@@ -4,4 +4,4 @@ __default__:
   output: "logs/cluster/%j.log"
 
 bwa_map:
-  cpus: 8
+  cpus: 16

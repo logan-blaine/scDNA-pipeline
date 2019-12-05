@@ -24,8 +24,8 @@ def get_fastqs_for_sample_id(wildcards):
 
 rule all:
     input:
-        expand("bamlinks/{sample}.bam", sample=samples.index),
-        expand("bamlinks/{sample}.bai", sample=samples.index),
+        expand("processed_bams/{sample}.bam", sample=samples.index),
+        expand("processed_bams/{sample}.bai", sample=samples.index),
         expand("metrics/{sample}.alignment_summary_metrics",
                sample=samples.index),
         expand("read_depth/{sample}.counts.tsv", sample=samples.index)
@@ -33,7 +33,7 @@ rule all:
 
 rule align:
     input:
-        expand("bamlinks/{sample}.mapped.bam", sample=samples.index)
+        expand("mapped_reads/{sample}.bam", sample=samples.index)
 
 
 rule count:
@@ -46,7 +46,7 @@ rule bwa_map:
         config['reference'],
         unpack(get_fastqs_for_sample_id)
     output:
-        "bamlinks/{sample}.mapped.bam"
+        temp("mapped_reads/{sample}.bam")
     log:
         "logs/bwa_mem/{sample}.log"
     threads: 16
@@ -59,7 +59,7 @@ rule fastq_to_ubam:
     input:
         unpack(get_fastqs_for_sample_id)
     output:
-        temp("bamlinks/{sample}.unmapped.bam")
+        temp("ubams/{sample}.bam")
     params:
         rg = get_rg,
         platform = "illumina"
@@ -76,10 +76,10 @@ rule merge_ubam:
     input:
         ref = config['reference'],
         ref_dict = config['reference'].rsplit(".", 1)[0] + ".dict",
-        ubam = "bamlinks/{sample}.unmapped.bam",
-        bam = "bamlinks/{sample}.mapped.bam"
+        ubam = "ubams/{sample}.bam",
+        bam = "mapped_reads/{sample}.bam"
     output:
-        temp("bamlinks/{sample}.merged.bam")
+        temp("merged_bams/{sample}.bam")
     group:
         "postprocessing"
     log:
@@ -91,9 +91,9 @@ rule merge_ubam:
 
 rule mark_duplicates:
     input:
-        "bamlinks/{sample}.merged.bam"
+        "merged_bams/{sample}.bam"
     output:
-        bam = temp("bamlinks/{sample}.dedup.bam"),
+        bam = temp("deduped_bams/{sample}.bam"),
         txt = "metrics/{sample}.dup_metrics.txt"
     params:
         so = "queryname",
@@ -110,10 +110,10 @@ rule mark_duplicates:
 
 rule sort_bam:
     input:
-        "bamlinks/{sample}.dedup.bam"
+        "deduped_bams/{sample}.bam"
     output:
-        bam = "bamlinks/{sample}.bam",
-        bai = "bamlinks/{sample}.bai"
+        bam = "processed_bams/{sample}.bam",
+        bai = "processed_bams/{sample}.bai"
     params:
         so = "coordinate"
     group:
@@ -129,7 +129,7 @@ rule sort_bam:
 rule collect_metrics:
     input:
         ref = config['reference'],
-        bam = "bamlinks/{sample}.bam"
+        bam = "processed_bams/{sample}.bam"
     output:
         "metrics/{sample}.alignment_summary_metrics"
     params:
@@ -147,7 +147,7 @@ rule collect_metrics:
 rule collect_read_counts:
     input:
         intervals = config['intervals'],
-        bam = "bamlinks/{sample}.bam"
+        bam = "processed_bams/{sample}.bam"
     output:
         "read_depth/{sample}.counts.tsv"
     params:

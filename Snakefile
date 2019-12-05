@@ -1,4 +1,4 @@
-read_deimport re
+import re
 import pandas as pd
 from snakemake.utils import validate
 

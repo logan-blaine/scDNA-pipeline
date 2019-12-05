@@ -28,7 +28,7 @@ rule all:
         expand("processed_bams/{sample}.bai", sample=samples.index),
         expand("metrics/{sample}.alignment_summary_metrics",
                sample=samples.index),
-        expand("read_depth/{sample}.counts.hdf5", sample=samples.index)
+        expand("read_depth/{sample}.counts.tsv", sample=samples.index)
 
 
 rule align:
@@ -38,7 +38,7 @@ rule align:
 
 rule count:
     input:
-        expand("read_depth/{sample}.counts.hdf5", sample=samples.index)
+        expand("read_depth/{sample}.counts.tsv", sample=samples.index)
 
 
 rule bwa_map:
@@ -148,9 +148,9 @@ rule collect_read_counts:
         intervals = config['intervals'],
         bam = "processed_bams/{sample}.bam"
     output:
-        "read_depth/{sample}.counts.hdf5"
+        "read_depth/{sample}.counts.tsv"
     params:
-        "--interval-merging-rule OVERLAPPING_ONLY"
+        "--interval-merging-rule OVERLAPPING_ONLY --format TSV "
     log:
         "logs/gatk/CollectReadCounts/{sample}.log"
     shell:

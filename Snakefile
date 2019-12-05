@@ -148,11 +148,11 @@ rule collect_read_counts:
         intervals = config['intervals'],
         bam = "processed_bams/{sample}.bam"
     output:
-        "/read_depth/{sample}.counts.hdf5"
+        "read_depth/{sample}.counts.hdf5"
     params:
         "--interval-merging-rule OVERLAPPING_ONLY"
     log:
         "logs/gatk/CollectReadCounts/{sample}.log"
     shell:
         "{GATK} CollectReadCounts -I {input.bam} -L {input.intervals} "
-        " {params} -O sample.counts.hdf5 2>{log}"
+        " {params} -O {output} 2>{log}"

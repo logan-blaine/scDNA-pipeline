@@ -37,7 +37,7 @@ rule align:
 
 rule count:
     input:
-        expand("/read_depth/{sample}.counts.hdf5", samples.index)
+        expand("/read_depth/{sample}.counts.hdf5", sample=samples.index)
 
 
 rule bwa_map:

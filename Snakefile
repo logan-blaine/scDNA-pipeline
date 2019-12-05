@@ -35,6 +35,11 @@ rule align:
         expand("mapped_reads/{sample}.bam", sample=samples.index)
 
 
+rule count:
+    input:
+        expand("/read_depth/{sample}.counts.hdf5", samples.index)
+
+
 rule bwa_map:
     input:
         config['reference'],
@@ -45,7 +50,7 @@ rule bwa_map:
         "logs/bwa_mem/{sample}.log"
     threads: 8
     shell:
-        "bwa mem -t {threads} {input} 2> {log} | samtools view -b - > {output}"
+        "bwa mem -YM -t {threads} {input} 2> {log} | samtools view -b - > {output}"
 
 
 rule fastq_to_ubam:
@@ -73,6 +78,8 @@ rule merge_ubam:
         bam = "mapped_reads/{sample}.bam"
     output:
         temp("merged_bams/{sample}.bam")
+    group:
+        "postprocessing"
     log:
         "logs/gatk/MergeBamAlignment/{sample}.log"
     shell:
@@ -89,6 +96,8 @@ rule mark_duplicates:
     params:
         so = "queryname",
         px_dist = 2500
+    group:
+        "postprocessing"
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
     shell:
@@ -101,10 +110,12 @@ rule sort_bam:
     input:
         "deduped_bams/{sample}.bam"
     output:
-        bam = protected("processed_bams/{sample}.bam"),
-        bai = protected("processed_bams/{sample}.bai")
+        bam = "processed_bams/{sample}.bam",
+        bai = "processed_bams/{sample}.bai"
     params:
         so = "coordinate"
+    group:
+        "postprocessing"
     log:
         "logs/gatk/SortSam/{sample}.log"
     shell:
@@ -122,11 +133,25 @@ rule collect_metrics:
     params:
         "--PROGRAM null "
         "--PROGRAM CollectAlignmentSummaryMetrics ",
-        "--PROGRAM QualityScoreDistribution ",
+        "--PROGRAM CollectInsertSizeMetrics",
         "--PROGRAM CollectSequencingArtifactMetrics ",
         "--PROGRAM CollectGcBiasMetrics "
     log:
-        "logs/gatk/collect_metrics/{sample}.log"
+        "logs/gatk/CollectMultipleMetrics/{sample}.log"
     shell:
         "{GATK} CollectMultipleMetrics {PICARD_TMP_DIR} {params} "
         "-I {input.bam} -O metrics/{wildcards.sample} -R {input.ref} 2>{log}"
+
+rule collect_read_counts:
+    input:
+        intervals = config['intervals'],
+        bam = "processed_bams/{sample}.bam"
+    output:
+        "/read_depth/{sample}.counts.hdf5"
+    params:
+        "--interval-merging-rule OVERLAPPING_ONLY"
+    log:
+        "logs/gatk/CollectReadCounts/{sample}.log"
+    shell:
+        "{GATK} CollectReadCounts -I {input.bam} -L {input.intervals} "
+        " {params} -O sample.counts.hdf5 2>{log}"

@@ -1,4 +1,5 @@
 reference: /pellmanlab/logan/references/GRCm38.p6.genome.fa
+intervals: /pellmanlab/logan/references/GRCm38.bed
 samples: samples.tsv
 gatk_cmd: 'gatk --java-options "-Xmx14G"'
 max_records: 2000000

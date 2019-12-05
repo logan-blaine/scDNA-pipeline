@@ -1,4 +1,4 @@
-import re
+read_deimport re
 import pandas as pd
 from snakemake.utils import validate
 
@@ -28,7 +28,7 @@ rule all:
         expand("processed_bams/{sample}.bai", sample=samples.index),
         expand("metrics/{sample}.alignment_summary_metrics",
                sample=samples.index),
-        expand("/read_depth/{sample}.counts.hdf5", sample=samples.index)
+        expand("read_depth/{sample}.counts.hdf5", sample=samples.index)
 
 
 rule align:
@@ -38,7 +38,7 @@ rule align:
 
 rule count:
     input:
-        expand("/read_depth/{sample}.counts.hdf5", sample=samples.index)
+        expand("read_depth/{sample}.counts.hdf5", sample=samples.index)
 
 
 rule bwa_map:

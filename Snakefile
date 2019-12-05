@@ -55,7 +55,7 @@ rule bwa_map:
         " | samtools view -b - > {output}"
 
 
-rule fastq_to_bamlinks/{sample}.dedup.bamm:
+rule fastq_to_ubam:
     input:
         unpack(get_fastqs_for_sample_id)
     output:

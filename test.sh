@@ -8,6 +8,6 @@ SBATCH_OPTS="--parsable -c {cluster.cpus} --mem {cluster.mem_gb}G --output {clus
 
 snakemake -prk --rerun-incomplete --nolock \
     -j 50 --local-cores $CORES --latency-wait 60 \
-    --configfile config.yaml --config samples=test.tsv \
+    --configfile config.yaml \
 	--cluster-config cluster.yaml \
-    --cluster "sbatch $SBATCH_OPTS" all
+    --cluster "sbatch $SBATCH_OPTS" --config samples=test.tsv

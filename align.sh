@@ -9,5 +9,5 @@ SBATCH_OPTS="--parsable -c {cluster.cpus} --mem {cluster.mem_gb}G --output {clus
 snakemake --rerun-incomplete --notemp \
     -j 50 --local-cores $CORES --latency-wait 60 \
     --configfile config.yaml \
-	--cluster-config cluster.yaml \
+    --cluster-config cluster.yaml \
     --cluster "sbatch $SBATCH_OPTS" align

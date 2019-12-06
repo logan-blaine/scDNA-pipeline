@@ -1,4 +1,3 @@
-import re
 import pandas as pd
 from snakemake.utils import validate
 
@@ -16,10 +15,7 @@ def get_rg(wildcards):
 
 def get_fastqs_for_sample_id(wildcards):
     prefix = get_rg(wildcards)
-    fq_dir = config['fastq_dir']
-    fastqs = {'fq1': os.path.join(fq_dir, f'{prefix}.unmapped.1.fastq.gz'),
-              'fq2': os.path.join(fq_dir, f'{prefix}.unmapped.2.fastq.gz')}
-    return fastqs
+    return {f'fq{i}': f'data/{prefix}.unmapped.{i}.fastq.gz' for i in '12'}
 
 
 rule all:
@@ -123,7 +119,7 @@ rule sort_bam:
     shell:
         "{GATK} SortSam {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
         " -I {input} -O {output.bam} -SO {params.so} "
-        " --CREATE_INDEX 2>{log}"
+        "--CREATE_INDEX 2>{log}"
 
 
 rule collect_metrics:
@@ -133,11 +129,11 @@ rule collect_metrics:
     output:
         "metrics/{sample}.alignment_summary_metrics"
     params:
-        "--PROGRAM null "
-        "--PROGRAM CollectAlignmentSummaryMetrics ",
+        "--PROGRAM null"
+        "--PROGRAM CollectAlignmentSummaryMetrics",
         "--PROGRAM CollectInsertSizeMetrics",
-        "--PROGRAM CollectSequencingArtifactMetrics ",
-        "--PROGRAM CollectGcBiasMetrics "
+        "--PROGRAM CollectSequencingArtifactMetrics",
+        "--PROGRAM CollectGcBiasMetrics"
     log:
         "logs/gatk/CollectMultipleMetrics/{sample}.log"
     shell:
@@ -151,9 +147,10 @@ rule collect_read_counts:
     output:
         "read_depth/{sample}.counts.tsv"
     params:
-        "--interval-merging-rule OVERLAPPING_ONLY --format TSV "
+        "--interval-merging-rule OVERLAPPING_ONLY",
+        "--format TSV"
     log:
         "logs/gatk/CollectReadCounts/{sample}.log"
     shell:
         "{GATK} CollectReadCounts -I {input.bam} -L {input.intervals} "
-        " {params} -O {output} 2>{log}"
+        "{params} -O {output} 2>{log}"

@@ -7,8 +7,8 @@ SAMPLES="samples.tsv"
 
 SBATCH_OPTS="--parsable -c {cluster.cpus} --mem {cluster.mem_gb}G --output {cluster.output}"
 
-snakemake -prk --rerun-incomplete --nolock --notemp \
+snakemake align -prk --rerun-incomplete --nolock --notemp \
     -j 50 --local-cores $CORES --latency-wait 60 \
     --configfile config.yaml --config samples=$SAMPLES \
 	--cluster-config cluster.yaml \
-    --cluster "sbatch $SBATCH_OPTS" align
+    --cluster "sbatch $SBATCH_OPTS"

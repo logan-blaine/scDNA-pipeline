@@ -45,7 +45,7 @@ rule bwa_map:
         config['reference'],
         unpack(get_fastqs_for_sample_id)
     output:
-        "mapped_reads/{sample}.bam"
+        temp("mapped_reads/{sample}.bam")
     log:
         "logs/bwa_mem/{sample}.log"
     threads: 16

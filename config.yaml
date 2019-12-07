@@ -1,6 +1,6 @@
 reference: /pellmanlab/logan/references/GRCm38.p6.genome.fa
 intervals: /pellmanlab/logan/references/GRCm38.10kb_bins.bed
-gatk_cmd: 'gatk --java-options "-Xmx14G"'
+gatk_cmd: 'gatk --java-options "-Xmx14G -XX:ConcGCThreads=3"'
 max_records: 2000000
-tmp_dir: 'tmp'
+tmp_dir: '/cluster/czlab/loganb/tmp/'
 samples: samples.tsv

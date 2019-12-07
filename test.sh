@@ -6,7 +6,7 @@ CORES=${SLURM_CPUS_PER_TASK:-1}
 
 SBATCH_OPTS="--parsable -c {cluster.cpus} --mem {cluster.mem_gb}G --output {cluster.output}"
 
-snakemake --rerun-incomplete \
+snakemake --rerun-incomplete -F \
     -j 50 --local-cores $CORES --latency-wait 60 \
     --configfile config.yaml \
 	--cluster-config cluster.yaml \

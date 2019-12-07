@@ -1,2 +1,2 @@
 #!/bin/bash
-snakemake --configfile config.yaml --unlock
+snakemake --configfile config.yaml --unlock --rerun-incomplete

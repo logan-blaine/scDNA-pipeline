@@ -87,9 +87,12 @@ rule merge_ubam:
         "postprocessing"
     log:
         "logs/gatk/MergeBamAlignment/{sample}.log"
+    params:
+        "--ALIGNER_PROPER_PAIR_FLAGS",
+        "-SO unsorted"
     shell:
         "{GATK} MergeBamAlignment {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
-        "-R {input.ref} -O {output} "
+        "-R {input.ref} -O {output} {params} "
         "-UNMAPPED {input.ubam} -ALIGNED {input.bam} 2>{log}"
 
 rule mark_duplicates:

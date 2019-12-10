@@ -4,8 +4,7 @@
 
 SBATCH_OPTS="--parsable -c {cluster.cpus} --mem {cluster.mem_gb}G --output {cluster.output} -x node07"
 
-snakemake --keep-going --restart-times 2 --rerun-incomplete \
+snakemake counts --keep-going --restart-times 2 --rerun-incomplete \
     -j 50 --local-cores ${SLURM_CPUS_PER_TASK:-1} --latency-wait 60 \
-    --configfile config.yaml \
-    --cluster-config cluster.yaml \
-    --cluster "sbatch $SBATCH_OPTS" all
+    --configfile config.yaml --cluster-config cluster.yaml \
+    --cluster "sbatch $SBATCH_OPTS"  --config samples=fam2.tsv

@@ -23,11 +23,15 @@ rule all:
         expand("processed_bams/{sample}.bam", sample=samples.index),
         expand("processed_bams/{sample}.bai", sample=samples.index)
 
+rule counts:
+    input:
+        expand("read_depth/{sample}.counts.tsv", sample=samples.index)
+
+
 rule metrics:
     input:
         expand("metrics/{sample}.alignment_summary_metrics",
                sample=samples.index),
-        expand("read_depth/{sample}.counts.tsv", sample=samples.index)
 
 
 rule align:

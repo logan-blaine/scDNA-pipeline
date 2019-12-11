@@ -20,7 +20,7 @@ def get_fastqs_for_sample_id(wildcards):
 
 
 def gatk_inputs(wildcards, input):
-    return ' '.join('-I '+i for i in inputs)
+    return ' '.join('-I '+i for i in input)
 
 
 rule all:

@@ -19,7 +19,7 @@ def get_fastqs_for_sample_id(wildcards):
     return {f'fq{i}': f'data/{prefix}.unmapped.{i}.fastq.gz' for i in '12'}
 
 
-def gatk_inputs(wildcards, inputs):
+def gatk_inputs(wildcards, input):
     return ' '.join('-I '+i for i in inputs)
 
 

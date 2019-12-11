@@ -19,8 +19,8 @@ def get_fastqs_for_sample_id(wildcards):
     return {f'fq{i}': f'data/{prefix}.unmapped.{i}.fastq.gz' for i in '12'}
 
 
-def gatk_inputs(wildcards, input):
-    return ' '.join('-I '+i for i in input)
+# def gatk_inputs(wildcards, input):
+#     return ' '.join('-I '+i for i in input)
 
 
 rule all:
@@ -47,24 +47,23 @@ rule align:
 
 rule count:
     input:
-        "cnv.pon.hdf5"
-
-
-rule panel_of_normals:
-    input:
         expand("read_depth/{sample}.counts.tsv", sample=samples.index)
-    output:
-        "cnv.pon.hdf5"
-    params:
-        gatk_inputs,
-        "--minimum-interval-median-percentile 10",
-        "--maximum-zeros-in-sample-percentage 1",
-        "--maximum-zeros-in-interval-percentage 20",
-        "--extreme-sample-median-percentile 10"
-    log:
-        "logs/gatk/CreateReadCountPanelOfNormals/PoN.log"
-    shell:
-        "{GATK} CreateReadCountPanelOfNormals {params} -O {output} 2> {log}"
+
+# rule panel_of_normals:
+#     input:
+#         expand("read_depth/{sample}.counts.tsv", sample=samples.index)
+#     output:
+#         "cnv.pon.hdf5"
+#     params:
+#         gatk_inputs,
+#         "--minimum-interval-median-percentile 10",
+#         "--maximum-zeros-in-sample-percentage 1",
+#         "--maximum-zeros-in-interval-percentage 20",
+#         "--extreme-sample-median-percentile 10"
+#     log:
+#         "logs/gatk/CreateReadCountPanelOfNormals/PoN.log"
+#     shell:
+#         "{GATK} CreateReadCountPanelOfNormals {params} -O {output} 2> {log}"
 
 rule bwa_map:
     input:

@@ -1,4 +1,5 @@
 import pandas as pd
+import subprocess
 from snakemake.utils import validate
 
 GATK = config["gatk_cmd"]
@@ -18,10 +19,15 @@ def get_fastqs_for_sample_id(wildcards):
     return {f'fq{i}': f'data/{prefix}.unmapped.{i}.fastq.gz' for i in '12'}
 
 
+def gatk_inputs(wildcards, inputs):
+    return ' '.join('-I '+i for i in inputs)
+
+
 rule all:
     input:
         expand("processed_bams/{sample}.bam", sample=samples.index),
         expand("processed_bams/{sample}.bai", sample=samples.index)
+
 
 rule counts:
     input:
@@ -41,8 +47,24 @@ rule align:
 
 rule count:
     input:
-        expand("read_depth/{sample}.counts.tsv", sample=samples.index)
+        "cnv.pon.hdf5"
 
+
+rule panel_of_normals:
+    input:
+        expand("read_depth/{sample}.counts.tsv", sample=samples.index)
+    output:
+        "cnv.pon.hdf5"
+    params:
+        gatk_inputs,
+        "--minimum-interval-median-percentile 10",
+        "--maximum-zeros-in-sample-percentage 1",
+        "--maximum-zeros-in-interval-percentage 20",
+        "--extreme-sample-median-percentile 10"
+    log:
+        "logs/gatk/CreateReadCountPanelOfNormals/PoN.log"
+    shell:
+        "{GATK} CreateReadCountPanelOfNormals {params} -O {output} 2> {log}"
 
 rule bwa_map:
     input:
@@ -75,6 +97,7 @@ rule fastq_to_ubam:
         "-RG {params.rg} -PU {params.rg} "
         "-PL {params.platform} 2>{log}"
 
+
 rule merge_ubam:
     input:
         ref = config['reference'],
@@ -89,11 +112,13 @@ rule merge_ubam:
         "logs/gatk/MergeBamAlignment/{sample}.log"
     params:
         "--ALIGNER_PROPER_PAIR_FLAGS",
-        "-SO unsorted"
+        "-SO unsorted",
+        "-MAX_GAPS -1"
     shell:
         "{GATK} MergeBamAlignment {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
         "-R {input.ref} -O {output} {params} "
         "-UNMAPPED {input.ubam} -ALIGNED {input.bam} 2>{log}"
+
 
 rule mark_duplicates:
     input:
@@ -113,6 +138,7 @@ rule mark_duplicates:
         "--OPTICAL_DUPLICATE_PIXEL_DISTANCE {params.px_dist} "
         "-I {input} -O {output.bam} "
         "-M {output.txt} -ASO {params.so} 2>{log}"
+
 
 rule sort_bam:
     input:
@@ -149,6 +175,7 @@ rule collect_metrics:
     shell:
         "{GATK} CollectMultipleMetrics {PICARD_TMP_DIR} {params} "
         "-I {input.bam} -O metrics/{wildcards.sample} -R {input.ref} 2>{log}"
+
 
 rule collect_read_counts:
     input:

@@ -31,7 +31,8 @@ rule all:
 
 rule counts:
     input:
-        expand("read_depth/{sample}.counts.tsv", sample=samples.index)
+        expand("read_depth/{sample}.counts.tsv", sample=samples.index),
+        expand("allelic_depth/{sample}.AD.tsv", sample=samples.index)
 
 
 rule metrics:
@@ -110,7 +111,6 @@ rule merge_ubam:
     log:
         "logs/gatk/MergeBamAlignment/{sample}.log"
     params:
-        "--ALIGNER_PROPER_PAIR_FLAGS",
         "-SO unsorted",
         "-MAX_GAPS -1"
     shell:
@@ -190,3 +190,17 @@ rule collect_read_counts:
     shell:
         "{GATK} CollectReadCounts -I {input.bam} -L {input.intervals} "
         "{params} -O {output} 2>{log}"
+
+
+rule collect_allelic_counts:
+    input:
+        ref = config['reference'],
+        intervals = config['snp_sites'],
+        bam = "processed_bams/{sample}.bam"
+    output:
+        "allelic_depth/{sample}.AD.tsv"
+    log:
+        "logs/gatk/CollectAllelicCounts/{sample}.log"
+    shell:
+        "{GATK} CollectAllelicCounts -I {input.bam} -L {input.intervals} "
+        "-R {input.ref} -O {output} 2>{log}"

@@ -4,4 +4,4 @@ gatk_cmd: 'gatk --java-options "-Xmx14G -XX:ConcGCThreads=3"'
 max_records: 2000000
 tmp_dir: 'tmp'
 samples: samples.tsv
-snp_sites: '/czlab/lblaine/data/mouse_bulk_seq/C57BL_129S1.mgp.v5.vcf.gz'
+snp_sites: '/czlab/lblaine/data/mouse_bulk_seq/C57BL_129S1.mgp.v5.list'

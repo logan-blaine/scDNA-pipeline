@@ -20,8 +20,8 @@ def get_fastqs_for_sample_id(wildcards):
 
 rule all:
     input:
-        expand("svaba/{sample}.contigs.bam", sample=samples.index),
-
+        # expand("svaba/{sample}.contigs.bam", sample=samples.index),
+        expand("svaba/{sample}.bps.txt.gz", sample=samples.index),
 
 rule counts:
     input:
@@ -165,7 +165,6 @@ rule collect_read_counts:
         "{GATK} CollectReadCounts -I {input.bam} -L {input.intervals} "
         "{params} -O {output} 2>{log}"
 
-
 rule collect_allelic_counts:
     input:
         ref = config['reference'],
@@ -179,6 +178,18 @@ rule collect_allelic_counts:
         "{GATK} CollectAllelicCounts -I {input.bam} -L {input.intervals} "
         "-R {input.ref} -O {output} 2>{log}"
 
+# rule collect_allelic_counts:
+#     input:
+#         intervals = config['snp_sites']
+#         bam = "processed_bams/{sample}.bam"
+#     output:
+#         "allelic_depth/{sample}.AD.tsv"
+#     log:
+#         "logs/gatk/GetPileupSummaries/{sample}.log"
+#     shell:
+#         "{GATK} GetPileupSummaries -I {input.bam} -L {input.intervals} "
+#         "-V {input.intervals} -O {output} 2>{log}"
+
 rule call_structural_variants:
     input:
         ref = config['reference'],
@@ -188,12 +199,13 @@ rule call_structural_variants:
     threads: 8
     params:
         normal = ' '.join([f'-n {normal}' for normal in config['normals']]),
-        flags = "--min-overlap 25 --mate-lookup-min 2"
+        flags = "--min-overlap 25 --mate-lookup-min 2 --discordant-only"
     log:
         "svaba/{sample}.log"
     output:
-        expand("svaba/{{sample}}{ext}",
-               ext=[".alignments.txt.gz", ".contigs.bam", ".bps.txt.gz"])
+        "svaba/{sample}.bps.txt.gz"
+        # expand("svaba/{{sample}}{ext}",
+        #        ext=[".alignments.txt.gz", ".contigs.bam", ".bps.txt.gz"])
     shell:
         "svaba run -a ../svaba/{wildcards.sample} -p {threads} "
         "-G {input.ref} {params} -t {input.bam} "

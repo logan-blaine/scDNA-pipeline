@@ -7,3 +7,6 @@ samples: samples.tsv
 snp_sites: '/czlab/lblaine/data/mouse_bulk_seq/C57BL_129S1.mgp.v5.list'
 simple_repeats: '/czlab/lblaine/data/references/mm10/simpleRepeat.UCSC.mm10.bed'
 germline_svs: '/czlab/lblaine/data/mouse_bulk_seq/C57BL_129S1.SV.bed'
+normals:
+    - '/czlab/lblaine/data/mouse_bulk_seq/C57BL_6NJ.renamed.bam'
+    - '/czlab/lblaine/data/mouse_bulk_seq/129S1_SvImJ.renamed.bam'

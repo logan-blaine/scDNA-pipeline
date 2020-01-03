@@ -20,8 +20,7 @@ def get_fastqs_for_sample_id(wildcards):
 
 rule all:
     input:
-        expand("processed_bams/{sample}.bam", sample=samples.index),
-        expand("processed_bams/{sample}.bai", sample=samples.index)
+        expand("svaba/{sample}.contigs.bam", sample=samples.index),
 
 
 rule counts:
@@ -39,11 +38,6 @@ rule metrics:
 rule align:
     input:
         expand("mapped_reads/{sample}.bam", sample=samples.index)
-
-
-rule count:
-    input:
-        expand("read_depth/{sample}.counts.tsv", sample=samples.index)
 
 
 rule bwa_map:
@@ -189,19 +183,18 @@ rule call_structural_variants:
     input:
         ref = config['reference'],
         bam = "processed_bams/{sample}.bam",
-#        normals = config['normals'],
         simple = config['simple_repeats'],
         germline = config['germline_svs']
     threads: 8
     params:
-        # normal=lambda wildcards, input: [f'-n {fi}', for fi in input.normals]
         normal = expand("-n {normal}", normal=config['normals']),
         flags = "--min-overlap 25 --mate-lookup-min 2"
     log:
         "svaba/{sample}.log"
     output:
-        expand("svaba/{{sample}}{ext}", ext=[".alignments.txt.gz", ".contigs.bam", ".bps.txt.gz"])
+        expand("svaba/{{sample}}{ext}",
+               ext=[".alignments.txt.gz", ".contigs.bam", ".bps.txt.gz"])
     shell:
-        "svaba run -a ../svaba/{sample} -p {threads} "
+        "svaba run -a ../svaba/{wildcards.sample} -p {threads} "
         "-G {input.ref} {params} -t {input.bam} "
         "-V {input.germline} -R {input.simple}"

@@ -1,5 +1,4 @@
 import pandas as pd
-import subprocess
 from snakemake.utils import validate
 
 GATK = config["gatk_cmd"]
@@ -17,10 +16,6 @@ def get_rg(wildcards):
 def get_fastqs_for_sample_id(wildcards):
     prefix = get_rg(wildcards)
     return {f'fq{i}': f'data/{prefix}.unmapped.{i}.fastq.gz' for i in '12'}
-
-
-# def gatk_inputs(wildcards, input):
-#     return ' '.join('-I '+i for i in input)
 
 
 rule all:
@@ -50,21 +45,6 @@ rule count:
     input:
         expand("read_depth/{sample}.counts.tsv", sample=samples.index)
 
-# rule panel_of_normals:
-#     input:
-#         expand("read_depth/{sample}.counts.tsv", sample=samples.index)
-#     output:
-#         "cnv.pon.hdf5"
-#     params:
-#         gatk_inputs,
-#         "--minimum-interval-median-percentile 10",
-#         "--maximum-zeros-in-sample-percentage 1",
-#         "--maximum-zeros-in-interval-percentage 20",
-#         "--extreme-sample-median-percentile 10"
-#     log:
-#         "logs/gatk/CreateReadCountPanelOfNormals/PoN.log"
-#     shell:
-#         "{GATK} CreateReadCountPanelOfNormals {params} -O {output} 2> {log}"
 
 rule bwa_map:
     input:
@@ -204,3 +184,22 @@ rule collect_allelic_counts:
     shell:
         "{GATK} CollectAllelicCounts -I {input.bam} -L {input.intervals} "
         "-R {input.ref} -O {output} 2>{log}"
+
+rule call_structural_variants:
+    input:
+        ref = config['reference'],
+        bam = "processed_bams/{sample}.bam"
+        normals = config['normal']
+    threads: 8
+    params:
+        # normal=lambda wildcards, input: [f'-n {fi}', for fi in input.normals]
+        normal = expand("-n {normal}", normal=input.normals)
+        flags = "--min-overlap 25 --mate-lookup-min 2"
+    log:
+        "svaba/{sample}.log"
+    output:
+        multiext("svaba/{sample}", ".alignments.txt.gz",
+                 ".contigs.bam", ".bps.txt.gz")
+    shell:
+        "svaba run -a ../svaba/{sample} -p {threads} "
+        "-G {input.ref} {params} -t {input.bam} "

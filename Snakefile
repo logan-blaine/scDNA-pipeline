@@ -188,12 +188,14 @@ rule collect_allelic_counts:
 rule call_structural_variants:
     input:
         ref = config['reference'],
-        bam = "processed_bams/{sample}.bam"
-        normals = config['normal']
+        bam = "processed_bams/{sample}.bam",
+        normals = config['normal'],
+        simple = config['simple_repeats'],
+        germline = config['germline_svs']
     threads: 8
     params:
         # normal=lambda wildcards, input: [f'-n {fi}', for fi in input.normals]
-        normal = expand("-n {normal}", normal=input.normals)
+        normal = expand("-n {normal}", normal=input.normals),
         flags = "--min-overlap 25 --mate-lookup-min 2"
     log:
         "svaba/{sample}.log"
@@ -203,3 +205,4 @@ rule call_structural_variants:
     shell:
         "svaba run -a ../svaba/{sample} -p {threads} "
         "-G {input.ref} {params} -t {input.bam} "
+        "-V {input.germline} -R {input.simple}"

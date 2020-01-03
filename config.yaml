@@ -5,3 +5,5 @@ max_records: 2000000
 tmp_dir: 'tmp'
 samples: samples.tsv
 snp_sites: '/czlab/lblaine/data/mouse_bulk_seq/C57BL_129S1.mgp.v5.list'
+simple_repeats: '/czlab/lblaine/data/references/mm10/simpleRepeat.UCSC.mm10.bed'
+germline_svs: '/czlab/lblaine/data/mouse_bulk_seq/C57BL_129S1.SV.bed'

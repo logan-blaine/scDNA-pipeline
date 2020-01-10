@@ -21,7 +21,8 @@ def get_fastqs_for_sample_id(wildcards):
 rule all:
     input:
         # expand("svaba/{sample}.contigs.bam", sample=samples.index),
-        expand("svaba/{sample}.bps.txt.gz", sample=samples.index),
+        expand("svaba/{sample}.svaba.unfiltered.somatic.sv.vcf",
+               sample=samples.index)
 
 rule counts:
     input:
@@ -199,13 +200,11 @@ rule call_structural_variants:
     threads: 8
     params:
         normal = ' '.join([f'-n {normal}' for normal in config['normals']]),
-        flags = "--min-overlap 25 --mate-lookup-min 2 --discordant-only"
+        flags = "--min-overlap 25 --mate-lookup-min 2"
     log:
         "svaba/{sample}.log"
     output:
-        "svaba/{sample}.bps.txt.gz"
-        # expand("svaba/{{sample}}{ext}",
-        #        ext=[".alignments.txt.gz", ".contigs.bam", ".bps.txt.gz"])
+        "svaba/{sample}.svaba.unfiltered.somatic.sv.vcf"
     shell:
         "svaba run -a ../svaba/{wildcards.sample} -p {threads} "
         "-G {input.ref} {params} -t {input.bam} "

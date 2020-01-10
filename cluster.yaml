@@ -5,3 +5,6 @@ __default__:
 
 bwa_map:
   cpus: 16
+
+call_structural_variants:
+  cpus: 8

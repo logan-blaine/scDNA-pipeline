@@ -204,7 +204,7 @@ rule call_structural_variants:
     log:
         "svaba/{sample}.log"
     output:
-        "svaba/{sample}.svaba.unfiltered.somatic.sv.vcf"
+        "processed_bams/{sample}.svaba.unfiltered.somatic.sv.vcf"
     shell:
         "svaba run -a {wildcards.sample} -p {threads} "
         "-G {input.ref} {params} -t {input.bam} "

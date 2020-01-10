@@ -21,7 +21,7 @@ def get_fastqs_for_sample_id(wildcards):
 rule all:
     input:
         # expand("svaba/{sample}.contigs.bam", sample=samples.index),
-        expand("processed_bams/{sample}.svaba.unfiltered.somatic.sv.vcf",
+        expand("svaba/{sample}.svaba.unfiltered.somatic.sv.vcf",
                sample=samples.index)
 
 rule counts:
@@ -204,8 +204,8 @@ rule call_structural_variants:
     log:
         "svaba/{sample}.log"
     output:
-        "processed_bams/{sample}.svaba.unfiltered.somatic.sv.vcf"
+        "svaba/{sample}.svaba.unfiltered.somatic.sv.vcf"
     shell:
-        "svaba run -a {wildcards.sample} -p {threads} "
+        "svaba run -a svaba/{wildcards.sample} -p {threads} "
         "-G {input.ref} {params} -t {input.bam} "
         "-V {input.germline} -R {input.simple}"

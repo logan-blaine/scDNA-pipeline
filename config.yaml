@@ -7,6 +7,6 @@ samples: samples.tsv
 snp_sites: '/pellmanlab/logan/data/mouse_bulk_seq/C57BL_129S1.mgp.v5.list'
 simple_repeats: '/pellmanlab/logan/data/references/mm10/simpleRepeat.UCSC.mm10.bed'
 germline_svs: '/pellmanlab/logan/data/mouse_bulk_seq/C57BL_129S1.SV.bed'
-normals: /pellmanlab/logan/data/references/mm10/SvJae_x_Bl6_normal.bam
+normal: /pellmanlab/logan/data/references/mm10/SvJae_x_Bl6_normal.bam
     # - '/pellmanlab/logan/data/mouse_bulk_seq/C57BL_6NJ.reordered.bam'
     # - '/pellmanlab/logan/data/mouse_bulk_seq/129S1_SvImJ.reordered.bam'

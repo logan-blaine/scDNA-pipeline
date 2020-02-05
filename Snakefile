@@ -221,7 +221,7 @@ rule call_structural_variants:
         "svaba/{group}.svaba.unfiltered.somatic.sv.vcf"
     shell:
         "svaba run -a svaba/{wildcards.group} -p {threads} "
-        "-G {input.ref} {params}"
+        "-G {input.ref} {params} "
         "-V {input.germline} -R {input.simple}"
 
 # rule call_structural_variants:

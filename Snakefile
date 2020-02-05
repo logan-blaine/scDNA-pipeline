@@ -212,7 +212,7 @@ rule call_structural_variants:
         germline = config['germline_svs']
     threads: 8
     params:
-        def bams(wildcards, input): return [f"-t {b}" for b in input.bam]
+        def bams(wildcards, input): return [f"-t {b}" for b in input.bam],
         normal = "-n " + config['normal'],
         flags = "--min-overlap 25 --mate-lookup-min 2"
     log:

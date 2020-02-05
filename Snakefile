@@ -211,7 +211,8 @@ rule call_structural_variants:
         germline = config['germline_svs']
     threads: 8
     params:
-        normal = config['normal'],
+        bams = lambda wildcards, input: f"-t {b}" for b in input.bam
+        normal = f"-n {config['normal']}",
         flags = "--min-overlap 25 --mate-lookup-min 2"
     log:
         "svaba/{group}.log"
@@ -219,7 +220,7 @@ rule call_structural_variants:
         "svaba/{group}.svaba.unfiltered.somatic.sv.vcf"
     shell:
         "svaba run -a svaba/{wildcards.group} -p {threads} "
-        "-G {input.ref} {params} -t {input.bam} "
+        "-G {input.ref} {params}"
         "-V {input.germline} -R {input.simple}"
 
 # rule call_structural_variants:

@@ -211,7 +211,7 @@ rule call_structural_variants:
         germline = config['germline_svs']
     threads: 8
     params:
-        normal = config['normal']),
+        normal = config['normal'],
         flags = "--min-overlap 25 --mate-lookup-min 2"
     log:
         "svaba/{group}.log"

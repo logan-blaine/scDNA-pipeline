@@ -5,7 +5,14 @@ GATK = config["gatk_cmd"]
 PICARD_MAX_RECORDS = f'--MAX_RECORDS_IN_RAM {config["max_records"]}'
 PICARD_TMP_DIR = f'--TMP_DIR {config["tmp_dir"]}'
 
-samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
+# samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
+samples = (
+    pd.read_table(config["samples"])
+    .set_index("sample", drop=False)
+    .assign(group=lambda x: x.index.map(lambda name: '_'.join(name.split("_")[:-1])))
+)
+groups=list(set(samples.group))
+
 validate(samples, "samples.schema.yaml")
 
 
@@ -17,12 +24,17 @@ def get_fastqs_for_sample_id(wildcards):
     prefix = get_rg(wildcards)
     return {f'fq{i}': f'data/{prefix}.unmapped.{i}.fastq.gz' for i in '12'}
 
+def get_samples_for_group(wildcards):
+    names = samples.query(f'group=="{wildcards.group}"').index
+    return [f'processed_bams/{sample}.bam' for sample in names]
+
 
 rule all:
     input:
         # expand("svaba/{sample}.contigs.bam", sample=samples.index),
-        expand("svaba/{sample}.svaba.unfiltered.somatic.sv.vcf",
-               sample=samples.index)
+        # expand("svaba/{sample}.svaba.unfiltered.somatic.sv.vcf",
+        #        sample=samples.index)
+        expand("svaba/{group}.svaba.unfiltered.somatic.sv.vcf", group=groups)
 
 rule counts:
     input:
@@ -194,18 +206,37 @@ rule collect_allelic_counts:
 rule call_structural_variants:
     input:
         ref = config['reference'],
-        bam = "processed_bams/{sample}.bam",
+        bam = get_samples_for_group,
         simple = config['simple_repeats'],
         germline = config['germline_svs']
     threads: 8
     params:
-        normal = ' '.join([f'-n {normal}' for normal in config['normals']]),
+        normal = config['normal']),
         flags = "--min-overlap 25 --mate-lookup-min 2"
     log:
-        "svaba/{sample}.log"
+        "svaba/{group}.log"
     output:
-        "svaba/{sample}.svaba.unfiltered.somatic.sv.vcf"
+        "svaba/{group}.svaba.unfiltered.somatic.sv.vcf"
     shell:
-        "svaba run -a svaba/{wildcards.sample} -p {threads} "
+        "svaba run -a svaba/{wildcards.group} -p {threads} "
         "-G {input.ref} {params} -t {input.bam} "
         "-V {input.germline} -R {input.simple}"
+
+# rule call_structural_variants:
+#     input:
+#         ref = config['reference'],
+#         bam = "processed_bams/{sample}.bam",
+#         simple = config['simple_repeats'],
+#         germline = config['germline_svs']
+#     threads: 8
+#     params:
+#         normal = ' '.join([f'-n {normal}' for normal in config['normals']]),
+#         flags = "--min-overlap 25 --mate-lookup-min 2"
+#     log:
+#         "svaba/{sample}.log"
+#     output:
+#         "svaba/{sample}.svaba.unfiltered.somatic.sv.vcf"
+#     shell:
+#         "svaba run -a svaba/{wildcards.sample} -p {threads} "
+#         "-G {input.ref} {params} -t {input.bam} "
+#         "-V {input.germline} -R {input.simple}"

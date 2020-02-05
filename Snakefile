@@ -11,7 +11,7 @@ samples = (
     .set_index("sample", drop=False)
     .assign(group=lambda x: x.index.map(lambda name: '_'.join(name.split("_")[:-1])))
 )
-groups=list(set(samples.group))
+groups = list(set(samples.group))
 
 validate(samples, "samples.schema.yaml")
 
@@ -23,6 +23,7 @@ def get_rg(wildcards):
 def get_fastqs_for_sample_id(wildcards):
     prefix = get_rg(wildcards)
     return {f'fq{i}': f'data/{prefix}.unmapped.{i}.fastq.gz' for i in '12'}
+
 
 def get_samples_for_group(wildcards):
     names = samples.query(f'group=="{wildcards.group}"').index
@@ -211,8 +212,8 @@ rule call_structural_variants:
         germline = config['germline_svs']
     threads: 8
     params:
-        bams = lambda wildcards, input: [f"-t {b}" for b in input.bam]
-        normal = f"-n {config['normal']}",
+        def bams(wildcards, input): return [f"-t {b}" for b in input.bam]
+        normal = "-n " + config['normal'],
         flags = "--min-overlap 25 --mate-lookup-min 2"
     log:
         "svaba/{group}.log"

@@ -214,7 +214,7 @@ rule call_structural_variants:
     params:
         bams = lambda wildcards, input: ' '.join([f"-t {b}" for b in input.bam]),
         normal = "-n " + config['normal'],
-        flags = "--min-overlap 25 --mate-lookup-min 2"
+        flags = "--min-overlap 25 --mate-lookup-min 3"
     log:
         "svaba/{group}.log"
     output:

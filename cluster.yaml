@@ -7,5 +7,5 @@ bwa_map:
   cpus: 16
 
 call_structural_variants:
-  cpus: 16
-  mem_gb : 64
+  cpus: 8
+  mem_gb : 24

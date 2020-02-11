@@ -9,3 +9,7 @@ bwa_map:
 call_structural_variants:
   cpus: 8
   mem_gb : 24
+
+refilter_structural_variants:
+   cpus: 1
+   mem_gb : 6

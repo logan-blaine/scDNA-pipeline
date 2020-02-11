@@ -32,10 +32,8 @@ def get_samples_for_group(wildcards):
 
 rule all:
     input:
-        # expand("svaba/{sample}.contigs.bam", sample=samples.index),
-        # expand("svaba/{sample}.svaba.unfiltered.somatic.sv.vcf",
-        #        sample=samples.index)
-        expand("svaba/{group}.svaba.unfiltered.somatic.sv.vcf", group=groups)
+        expand("svaba/{group}.svaba.refiltered.somatic.sv.vcf", group=groups)
+
 
 rule counts:
     input:
@@ -224,21 +222,15 @@ rule call_structural_variants:
         "-G {input.ref} {params} "
         "-V {input.germline} -R {input.simple}"
 
-# rule call_structural_variants:
-#     input:
-#         ref = config['reference'],
-#         bam = "processed_bams/{sample}.bam",
-#         simple = config['simple_repeats'],
-#         germline = config['germline_svs']
-#     threads: 8
-#     params:
-#         normal = ' '.join([f'-n {normal}' for normal in config['normals']]),
-#         flags = "--min-overlap 25 --mate-lookup-min 2"
-#     log:
-#         "svaba/{sample}.log"
-#     output:
-#         "svaba/{sample}.svaba.unfiltered.somatic.sv.vcf"
-#     shell:
-#         "svaba run -a svaba/{wildcards.sample} -p {threads} "
-#         "-G {input.ref} {params} -t {input.bam} "
-#         "-V {input.germline} -R {input.simple}"
+rule filter_structural_variants:
+    input:
+        "svaba/{group}.svaba.unfiltered.somatic.sv.vcf"
+    threads: 1
+    log:
+        "logs/bcftools/{group}.log"
+    output:
+        "svaba/{group}.svaba.refiltered.somatic.sv.vcf"
+    params:
+        "-i '(SPAN<0 || SPAN>150000) && N_PASS(AD>0)==1 && AD>=3'"
+    shell:
+        "bcftools view {input} {params} -o {output} 2>{log}"

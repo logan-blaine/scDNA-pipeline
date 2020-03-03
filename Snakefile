@@ -176,7 +176,20 @@ rule collect_read_counts:
         "{GATK} CollectReadCounts -I {input.bam} -L {input.intervals} "
         "{params} -O {output} 2>{log}"
 
-rule collect_allelic_counts:
+# rule collect_allelic_counts:
+#     input:
+#         ref = config['reference'],
+#         intervals = config['snp_sites'],
+#         bam = "processed_bams/{sample}.bam"
+#     output:
+#         "allelic_depth/{sample}.AD.tsv"
+#     log:
+#         "logs/gatk/CollectAllelicCounts/{sample}.log"
+#     shell:
+#         "{GATK} CollectAllelicCounts -I {input.bam} -L {input.intervals} "
+#         "-R {input.ref} -O {output} 2>{log}"
+
+rule count_reads_allelic:
     input:
         ref = config['reference'],
         intervals = config['snp_sites'],
@@ -184,9 +197,9 @@ rule collect_allelic_counts:
     output:
         "allelic_depth/{sample}.AD.tsv"
     log:
-        "logs/gatk/CollectAllelicCounts/{sample}.log"
+        "logs/gatk/ASEReadCounter/{sample}.log"
     shell:
-        "{GATK} CollectAllelicCounts -I {input.bam} -L {input.intervals} "
+        "{GATK} ASEReadCounter -I {input.bam} -V {input.intervals} "
         "-R {input.ref} -O {output} 2>{log}"
 
 # rule collect_allelic_counts:

@@ -220,9 +220,9 @@ rule count_reads_allelic:
 rule call_structural_variants:
     input:
         ref = config['reference'],
-        bam = get_samples_for_group,
-        simple = config['simple_repeats'],
-        germline = config['germline_svs']
+        bam = get_samples_for_group
+        # simple = config['simple_repeats'],
+        # germline = config['germline_svs']
     threads: 8
     params:
         bams = lambda wildcards, input: ' '.join([f"-t {b}" for b in input.bam]),
@@ -235,7 +235,7 @@ rule call_structural_variants:
     shell:
         "svaba run -a svaba/{wildcards.group} -p {threads} "
         "-G {input.ref} {params} "
-        "-V {input.germline} -R {input.simple}"
+        # "-V {input.germline} -R {input.simple}"
 
 rule filter_structural_variants:
     input:

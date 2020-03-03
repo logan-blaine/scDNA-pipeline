@@ -22,7 +22,7 @@ def get_rg(wildcards):
     return samples.loc[wildcards.sample]['prefix']
 
 
-def get_fastqs_for_sample_id(wildcards):
+def stqs_for_sample_id(wildcards):
     prefix = get_rg(wildcards)
     return {f'fq{i}': f'data/{prefix}.unmapped.{i}.fastq.gz' for i in '12'}
 
@@ -131,8 +131,7 @@ rule sort_bam:
     input:
         "deduped_bams/{sample}.bam"
     output:
-        bam = "processed_bams/{sample}.bam",
-        bai = "processed_bams/{sample}.bai"
+        bam = "processed_bams/{sample}.bam"
     params:
         so = "coordinate"
     group:

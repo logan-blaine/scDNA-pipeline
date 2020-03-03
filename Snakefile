@@ -22,7 +22,7 @@ def get_rg(wildcards):
     return samples.loc[wildcards.sample]['prefix']
 
 
-def stqs_for_sample_id(wildcards):
+def get_fastqs_for_sample_id(wildcards):
     prefix = get_rg(wildcards)
     return {f'fq{i}': f'data/{prefix}.unmapped.{i}.fastq.gz' for i in '12'}
 

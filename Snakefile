@@ -4,6 +4,8 @@ import pandas as pd
 GATK = config["gatk_cmd"]
 PICARD_MAX_RECORDS = f'--MAX_RECORDS_IN_RAM {config["max_records"]}'
 PICARD_TMP_DIR = f'--TMP_DIR {config["tmp_dir"]}'
+GATK_FILTERS = ("-RF MappingQualityReadFilter --minimum-mapping-quality 30 "
+                "-RF OverclippedReadFilter --filter-too-short 50")
 
 # samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
 samples = (
@@ -14,6 +16,7 @@ samples = (
 groups = list(set(samples.group))
 
 # validate(samples, "samples.schema.yaml")
+
 
 def get_rg(wildcards):
     return samples.loc[wildcards.sample]['prefix']

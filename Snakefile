@@ -1,5 +1,5 @@
 import pandas as pd
-from snakemake.utils import validate
+# from snakemake.utils import validate
 
 GATK = config["gatk_cmd"]
 PICARD_MAX_RECORDS = f'--MAX_RECORDS_IN_RAM {config["max_records"]}'
@@ -13,8 +13,7 @@ samples = (
 )
 groups = list(set(samples.group))
 
-validate(samples, "samples.schema.yaml")
-
+# validate(samples, "samples.schema.yaml")
 
 def get_rg(wildcards):
     return samples.loc[wildcards.sample]['prefix']

@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 # from snakemake.utils import validate
 
 GATK = config["gatk_cmd"]
@@ -15,6 +16,7 @@ samples = (
 )
 groups = list(set(samples.group))
 
+os.makedirs("logs/cluster")
 # validate(samples, "samples.schema.yaml")
 
 

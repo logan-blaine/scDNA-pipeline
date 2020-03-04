@@ -204,7 +204,7 @@ rule count_reads_allelic:
         "logs/gatk/ASEReadCounter/{sample}.log"
     shell:
         "{GATK} ASEReadCounter -I {input.bam} -V {input.intervals} "
-        "-O {output} 2>{log}"
+        "-R {ref} -O {output} 2>{log}"
 
 # rule collect_allelic_counts:
 #     input:

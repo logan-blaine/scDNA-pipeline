@@ -34,15 +34,15 @@ def get_samples_for_group(wildcards):
     return [f'processed_bams/{sample}.bam' for sample in names]
 
 
-rule all:
-    input:
-        expand("svaba/{group}.svaba.refiltered.somatic.sv.vcf", group=groups)
-
-
 rule counts:
     input:
         expand("read_depth/{sample}.counts.tsv", sample=samples.index),
         expand("allelic_depth/{sample}.AD.tsv", sample=samples.index)
+
+
+rule svs:
+    input:
+        expand("svaba/{group}.svaba.refiltered.somatic.sv.vcf", group=groups)
 
 
 rule metrics:

@@ -16,7 +16,7 @@ samples = (
 )
 groups = list(set(samples.group))
 
-os.makedirs("logs/cluster")
+os.makedirs("logs/cluster", exist_ok=True)
 # validate(samples, "samples.schema.yaml")
 
 

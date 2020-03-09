@@ -178,7 +178,7 @@ rule collect_read_counts:
         "logs/gatk/CollectReadCounts/{sample}.log"
     shell:
         "{GATK} CollectReadCounts -I {input.bam} -L {input.intervals} "
-        "{params} -O {output} 2>{log}"
+        "{params} {GATK_FILTERS} -O {output} 2>{log}"
 
 # rule collect_allelic_counts:
 #     input:
@@ -204,7 +204,7 @@ rule count_reads_allelic:
         "logs/gatk/ASEReadCounter/{sample}.log"
     shell:
         "{GATK} ASEReadCounter -I {input.bam} -V {input.intervals} "
-        "-R {input.ref} -O {output} 2>{log}"
+        "-R {input.ref} -O {output} {GATK_FILTERS} 2>{log}"
 
 # rule collect_allelic_counts:
 #     input:
@@ -250,3 +250,23 @@ rule filter_structural_variants:
         "-i '(SPAN<0 || SPAN>150000) && N_PASS(AD>0)==1 && AD>=3'"
     shell:
         "bcftools view {input} {params} -o {output} 2>{log}"
+
+rule call_short_variants:
+    input:
+        ref = config['reference'],
+        bam = get_samples_for_group
+        # simple = config['simple_repeats'],
+        # germline = config['germline_svs']
+    threads: 8
+    params:
+        bams = lambda wildcards, input: ' '.join([f"-I {b}" for b in input.bam])
+        # normal = "-n " + config['normal'],
+        # flags = "--min-overlap 25"
+    log:
+        "logs/gatk/HaplotypeCaller/{group}.log"
+    output:
+        "short_variants/{group}.vcf.gz"
+    shell:
+        "{GATK} HaplotypeCaller {GATK_FILTERS} "
+        "-R {input.ref} {params} -O {output}"
+        # "-V {input.germline} -R {input.simple}"

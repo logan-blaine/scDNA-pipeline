@@ -4,9 +4,9 @@ gatk_cmd: 'gatk --java-options "-Xmx14G -XX:ConcGCThreads=3"'
 max_records: 2000000
 tmp_dir: 'tmp'
 samples: samples.tsv
-snp_sites: '/pellmanlab/logan/data/mouse_bulk_seq/C57BL_129S1.mgp.v5.list'
-simple_repeats: '/pellmanlab/logan/data/references/mm10/simpleRepeat.UCSC.mm10.bed'
-germline_svs: '/pellmanlab/logan/data/mouse_bulk_seq/C57BL_129S1.SV.bed'
+snp_sites: '/pellmanlab/logan/data/references/mm10/129S1_SvImJ.alts.vcf.gz'
+#simple_repeats: '/pellmanlab/logan/data/references/mm10/simpleRepeat.UCSC.mm10.bed'
+#germline_svs: '/pellmanlab/logan/data/mouse_bulk_seq/C57BL_129S1.SV.bed'
 normal: /pellmanlab/logan/data/references/mm10/SvJae_x_Bl6_normal.bam
     # - '/pellmanlab/logan/data/mouse_bulk_seq/C57BL_6NJ.reordered.bam'
     # - '/pellmanlab/logan/data/mouse_bulk_seq/129S1_SvImJ.reordered.bam'

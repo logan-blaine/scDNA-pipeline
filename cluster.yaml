@@ -4,12 +4,8 @@ __default__:
   output: "logs/cluster/%j.log"
 
 bwa_map:
-  cpus: 16
+  cpus: 8
 
 call_structural_variants:
-  cpus: 8
+  cpus: 6
   mem_gb : 24
-
-refilter_structural_variants:
-   cpus: 1
-   mem_gb : 6

@@ -34,6 +34,9 @@ def get_samples_for_group(wildcards):
     return [f'processed_bams/{sample}.bam' for sample in names]
 
 
+localrules: all, counts, svs, metrics, align, filter_structural_variants
+
+
 rule counts:
     input:
         expand("read_depth/{sample}.counts.tsv", sample=samples.index),
@@ -233,7 +236,7 @@ rule call_structural_variants:
         "svaba/{group}.log"
     output:
         "svaba/{group}.svaba.unfiltered.somatic.sv.vcf"
-    group: "svaba"
+    # group: "svaba"
     shell:
         "svaba run -a svaba/{wildcards.group} -p {threads} "
         "-G {input.ref} {params} "
@@ -250,7 +253,7 @@ rule filter_structural_variants:
     params:
         "-i '(SPAN>150000 | (DISC_MAPQ>30 & SPAN==-1)) ",
         "& N_PASS(AD>0)==1 & SR>0 & DR>1'"
-    group: "svaba"
+    # group: "svaba"
     shell:
         "bcftools view {input} {params} -o {output} 2>{log}"
 

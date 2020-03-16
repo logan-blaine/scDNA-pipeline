@@ -34,7 +34,7 @@ def get_samples_for_group(wildcards):
     return [f'processed_bams/{sample}.bam' for sample in names]
 
 
-localrules: all, counts, svs, metrics, align, filter_structural_variants
+localrules: counts, svs, metrics, align, filter_structural_variants
 
 
 rule counts:

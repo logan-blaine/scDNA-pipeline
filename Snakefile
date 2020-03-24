@@ -83,7 +83,9 @@ rule align:
 rule bwa_map:
     input:
         config['reference'],
-        unpack(get_fastqs_for_sample_id)
+        # unpack(get_fastqs_for_sample_id)
+        fq1="data/{sample}.unmapped.1.fastq.gz",
+        fq2="data/{sample}.unmapped.2.fastq.gz"
     output:
         temp("mapped_reads/{sample}.bam")
     log:

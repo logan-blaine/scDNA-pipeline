@@ -14,12 +14,13 @@ GATK_FILTERS = ("-RF MappingQualityReadFilter --minimum-mapping-quality 30 "
 # wildcards = wc()
 # wildcards.group="test"
 # wildcards.sample="EM_SC_190809_M1_1A"
-# get_prefixes_for_sample(wildcards)
+# sample_sheet.query(f'prefix=="1_HKVVVDSXX.1.ATTACTCG_TATAGCCT"')
 
 sample_sheet = pd.read_table(config['samples'], sep=None)
 all_samples=set(sample_sheet['sample'])
 all_groups = list(set(sample_sheet['group']))
 
+# sample_sheet.query('prefix=="1_HKVVVDSXX.1.ATTACTCG_TATAGCCT"')['sample'][0]
 # samples = (
 #     pd.read_table(config["samples"])
 #     .set_index("sample", drop=False)
@@ -30,6 +31,12 @@ all_groups = list(set(sample_sheet['group']))
 
 os.makedirs("logs/cluster", exist_ok=True)
 # validate(samples, "samples.schema.yaml")
+
+
+def get_sample_from_prefix(wildcards):
+    entries = sample_sheet.query(f'prefix=="{wildcards.sample}"')
+    return entries['sample'][0]
+
 
 def get_merged_bams_for_sample(wildcards):
     entries = sample_sheet.query(f'sample=="{wildcards.sample}"')
@@ -104,15 +111,15 @@ rule fastq_to_ubam:
     output:
         temp("ubams/{sample}.bam")
     params:
-        rg = get_rg,
+        sm = get_sample_from_prefix,
         platform = "illumina"
     log:
         "logs/gatk/FastqToSam/{sample}.log"
     shell:
         "{GATK} FastqToSam {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
         "-F1 {input.fq1} -F2 {input.fq2} -O {output} "
-        "-SM {wildcards.sample} -LB {wildcards.sample} "
-        "-RG {params.rg} -PU {params.rg} "
+        "-SM {params.sm} -LB {params.sm} "
+        "-RG {wildcards.sample} -PU {wildcards.sample} "
         "-PL {params.platform} 2>{log}"
 
 

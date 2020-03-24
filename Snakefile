@@ -35,7 +35,7 @@ os.makedirs("logs/cluster", exist_ok=True)
 
 def get_sample_from_prefix(wildcards):
     entries = sample_sheet.query(f'prefix=="{wildcards.sample}"')
-    return entries['sample']
+    return entries['sample'].iloc[0]
 
 
 def get_merged_bams_for_sample(wildcards):

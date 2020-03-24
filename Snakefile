@@ -8,30 +8,51 @@ PICARD_TMP_DIR = f'--TMP_DIR {config["tmp_dir"]}'
 GATK_FILTERS = ("-RF MappingQualityReadFilter --minimum-mapping-quality 30 "
                 "-RF OverclippedReadFilter --filter-too-short 50")
 
-# samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
-samples = (
-    pd.read_table(config["samples"])
-    .set_index("sample", drop=False)
-    .assign(group=lambda x: x.index.map(lambda name: '_'.join(name.split("_")[:-1])))
-)
-groups = list(set(samples.group))
+# sample_sheet=pd.read_table('samples.csv', sep=None)
+# class wc:
+#     pass
+# wildcards = wc()
+# wildcards.group="test"
+# wildcards.sample="EM_SC_190809_M1_1A"
+# get_prefixes_for_sample(wildcards)
+
+sample_sheet = pd.read_table(config['samples'], sep=None)
+all_samples=set(sample_sheet['sample'])
+all_groups = list(set(sample_sheet['group']))
+
+# samples = (
+#     pd.read_table(config["samples"])
+#     .set_index("sample", drop=False)
+#     .assign(group=lambda x: x.index.map(lambda name: '_'.join(name.split("_")[:-1])))
+# )
+# groups = list(set(samples.group))
+#
 
 os.makedirs("logs/cluster", exist_ok=True)
 # validate(samples, "samples.schema.yaml")
 
-
-def get_rg(wildcards):
-    return samples.loc[wildcards.sample]['prefix']
-
-
-def get_fastqs_for_sample_id(wildcards):
-    prefix = get_rg(wildcards)
-    return {f'fq{i}': f'data/{prefix}.unmapped.{i}.fastq.gz' for i in '12'}
+def get_merged_bams_for_sample(wildcards):
+    entries = sample_sheet.query(f'sample=="{wildcards.sample}"')
+    return [f'merged_bams/{p}.bam' for p in entries['prefix']]
+    # return list(entries['prefix'])
 
 
+# def get_rg(wildcards):
+#     return samples.loc[wildcards.sample]['prefix']
+
+
+# def get_fastqs_for_sample_id(wildcards):
+#     prefix = get_rg(wildcards)
+#     return {f'fq{i}': f'data/{prefix}.unmapped.{i}.fastq.gz' for i in '12'}
+
+#NEW
 def get_samples_for_group(wildcards):
-    names = samples.query(f'group=="{wildcards.group}"').index
-    return [f'processed_bams/{sample}.bam' for sample in names]
+    names = sample_sheet.query(f'group=="{wildcards.group}"')
+    return [f'processed_bams/{sample}.bam' for sample in names['sample']]
+
+# def get_samples_for_group(wildcards):
+#     names = samples.query(f'group=="{wildcards.group}"').index
+#     return [f'processed_bams/{sample}.bam' for sample in names]
 
 
 localrules: counts, svs, metrics, align, filter_structural_variants
@@ -39,24 +60,24 @@ localrules: counts, svs, metrics, align, filter_structural_variants
 
 rule counts:
     input:
-        expand("read_depth/{sample}.counts.tsv", sample=samples.index),
-        expand("allelic_depth/{sample}.AD.tsv", sample=samples.index)
+        expand("read_depth/{sample}.counts.tsv", sample=all_samples),
+        expand("allelic_depth/{sample}.AD.tsv", sample=all_samples)
 
 
 rule svs:
     input:
-        expand("svaba/{group}.svaba.refiltered.somatic.sv.vcf", group=groups)
+        expand("svaba/{group}.svaba.refiltered.somatic.sv.vcf", group=all_groups)
 
 
 rule metrics:
     input:
         expand("metrics/{sample}.alignment_summary_metrics",
-               sample=samples.index),
+               sample=all_samples),
 
 
 rule align:
     input:
-        expand("mapped_reads/{sample}.bam", sample=samples.index)
+        expand("mapped_reads/{sample}.bam", sample=all_samples)
 
 
 rule bwa_map:
@@ -75,7 +96,9 @@ rule bwa_map:
 
 rule fastq_to_ubam:
     input:
-        unpack(get_fastqs_for_sample_id)
+        # unpack(get_fastqs_for_sample_id)
+        fq1="data/{sample}.unmapped.1.fastq.gz",
+        fq2="data/{sample}.unmapped.2.fastq.gz"
     output:
         temp("ubams/{sample}.bam")
     params:
@@ -114,13 +137,14 @@ rule merge_ubam:
 
 rule mark_duplicates:
     input:
-        "merged_bams/{sample}.bam"
+        bam=get_merged_bams_for_sample
     output:
         bam = temp("deduped_bams/{sample}.bam"),
         txt = "metrics/{sample}.dup_metrics.txt"
     params:
         so = "queryname",
-        px_dist = 2500
+        px_dist = 2500,
+        bams = lambda wildcards, input: ' '.join([f"-I {b}" for b in input.bam])
     group:
         "postprocessing"
     log:
@@ -128,7 +152,7 @@ rule mark_duplicates:
     shell:
         "{GATK} MarkDuplicates {PICARD_TMP_DIR} "
         "--OPTICAL_DUPLICATE_PIXEL_DISTANCE {params.px_dist} "
-        "-I {input} -O {output.bam} "
+        "{params.bams} -O {output.bam} "
         "-M {output.txt} -ASO {params.so} 2>{log}"
 
 
@@ -252,7 +276,7 @@ rule filter_structural_variants:
         "svaba/{group}.svaba.refiltered.somatic.sv.vcf"
     params:
         "-i '(SPAN>150000 | (DISC_MAPQ>30 & SPAN==-1)) ",
-        "& N_PASS(AD>0)==1 & SR>0 & DR>0'"
+        "& N_PASS(AD>0)==1 & SR>0 & DR>0 & AD >= 3'"
     # group: "svaba"
     shell:
         "bcftools view {input} {params} -o {output} 2>{log}"

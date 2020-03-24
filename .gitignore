@@ -3,5 +3,5 @@
 !.gitignore
 !Snakefile
 !*.yaml
-!*.tsv
+!*.*sv
 !*.sh

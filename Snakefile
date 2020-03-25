@@ -8,6 +8,11 @@ PICARD_TMP_DIR = f'--TMP_DIR {config["tmp_dir"]}'
 GATK_FILTERS = ("-RF MappingQualityReadFilter --minimum-mapping-quality 30 "
                 "-RF OverclippedReadFilter --filter-too-short 50")
 
+
+sample_sheet = pd.read_table(config['samples'], sep=None)
+all_samples=set(sample_sheet['sample'])
+all_groups = list(set(sample_sheet['group']))
+
 # sample_sheet=pd.read_table('samples.csv', sep=None)
 # class wc:
 #     pass
@@ -15,11 +20,6 @@ GATK_FILTERS = ("-RF MappingQualityReadFilter --minimum-mapping-quality 30 "
 # wildcards.group="test"
 # wildcards.sample="EM_SC_190809_M1_1A"
 # sample_sheet.query(f'prefix=="1_HKVVVDSXX.1.ATTACTCG_TATAGCCT"')
-
-sample_sheet = pd.read_table(config['samples'], sep=None)
-all_samples=set(sample_sheet['sample'])
-all_groups = list(set(sample_sheet['group']))
-
 # sample_sheet.query('prefix=="1_HKVVVDSXX.1.ATTACTCG_TATAGCCT"')['sample'][0]
 # samples = (
 #     pd.read_table(config["samples"])
@@ -41,25 +41,11 @@ def get_sample_from_prefix(wildcards):
 def get_merged_bams_for_sample(wildcards):
     entries = sample_sheet.query(f'sample=="{wildcards.sample}"')
     return [f'merged_bams/{p}.bam' for p in entries['prefix']]
-    # return list(entries['prefix'])
 
 
-# def get_rg(wildcards):
-#     return samples.loc[wildcards.sample]['prefix']
-
-
-# def get_fastqs_for_sample_id(wildcards):
-#     prefix = get_rg(wildcards)
-#     return {f'fq{i}': f'data/{prefix}.unmapped.{i}.fastq.gz' for i in '12'}
-
-#NEW
 def get_samples_for_group(wildcards):
     names = sample_sheet.query(f'group=="{wildcards.group}"')
     return [f'processed_bams/{sample}.bam' for sample in names['sample']]
-
-# def get_samples_for_group(wildcards):
-#     names = samples.query(f'group=="{wildcards.group}"').index
-#     return [f'processed_bams/{sample}.bam' for sample in names]
 
 
 localrules: counts, svs, metrics, align, filter_structural_variants
@@ -84,13 +70,12 @@ rule metrics:
 
 rule align:
     input:
-        expand("mapped_reads/{sample}.bam", sample=all_samples)
+        expand("processed_bams/{sample}.bam", sample=all_samples)
 
 
 rule bwa_map:
     input:
         config['reference'],
-        # unpack(get_fastqs_for_sample_id)
         fq1="data/{sample}.unmapped.1.fastq.gz",
         fq2="data/{sample}.unmapped.2.fastq.gz"
     output:
@@ -105,7 +90,6 @@ rule bwa_map:
 
 rule fastq_to_ubam:
     input:
-        # unpack(get_fastqs_for_sample_id)
         fq1="data/{sample}.unmapped.1.fastq.gz",
         fq2="data/{sample}.unmapped.2.fastq.gz"
     output:

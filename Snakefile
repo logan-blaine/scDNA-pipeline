@@ -3,7 +3,8 @@ import os
 # from snakemake.utils import validate
 
 GATK = config["gatk_cmd"]
-PICARD_MAX_RECORDS = f'--MAX_RECORDS_IN_RAM {config["max_records"]}'
+PICARD_MAX_RECORDS=""
+# PICARD_MAX_RECORDS = f'--MAX_RECORDS_IN_RAM {config["max_records"]}'
 PICARD_TMP_DIR = f'--TMP_DIR {config["tmp_dir"]}'
 GATK_FILTERS = ("-RF MappingQualityReadFilter --minimum-mapping-quality 30 "
                 "-RF OverclippedReadFilter --filter-too-short 50")
@@ -115,8 +116,6 @@ rule merge_ubam:
         bam = "mapped_reads/{sample}.bam"
     output:
         temp("merged_bams/{sample}.bam")
-    group:
-        "postprocessing"
     log:
         "logs/gatk/MergeBamAlignment/{sample}.log"
     params:
@@ -138,8 +137,6 @@ rule mark_duplicates:
         so = "queryname",
         px_dist = 2500,
         bams = lambda wildcards, input: ' '.join([f"-I {b}" for b in input.bam])
-    group:
-        "postprocessing"
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
     shell:
@@ -156,8 +153,6 @@ rule sort_bam:
         bam = "processed_bams/{sample}.bam"
     params:
         so = "coordinate"
-    group:
-        "postprocessing"
     log:
         "logs/gatk/SortSam/{sample}.log"
     shell:

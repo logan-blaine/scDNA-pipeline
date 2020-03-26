@@ -100,6 +100,7 @@ rule fastq_to_ubam:
         platform = "illumina"
     log:
         "logs/gatk/FastqToSam/{sample}.log"
+    threads: 4
     shell:
         "{GATK} FastqToSam "
         "-F1 {input.fq1} -F2 {input.fq2} -O {output} "
@@ -121,6 +122,7 @@ rule merge_ubam:
     params:
         "-SO unsorted",
         "-MAX_GAPS -1"
+    threads: 4
     shell:
         "{GATK} MergeBamAlignment {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
         "-R {input.ref} -O {output} {params} "
@@ -139,6 +141,7 @@ rule mark_duplicates:
         bams = lambda wildcards, input: ' '.join([f"-I {b}" for b in input.bam])
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
+    threads: 4
     shell:
         "{GATK} MarkDuplicates {PICARD_TMP_DIR} "
         "--OPTICAL_DUPLICATE_PIXEL_DISTANCE {params.px_dist} "
@@ -175,6 +178,7 @@ rule collect_metrics:
         "--PROGRAM CollectGcBiasMetrics"
     log:
         "logs/gatk/CollectMultipleMetrics/{sample}.log"
+    threads: 4
     shell:
         "{GATK} CollectMultipleMetrics {PICARD_TMP_DIR} {params} "
         "-I {input.bam} -O metrics/{wildcards.sample} -R {input.ref} 2>{log}"
@@ -191,6 +195,7 @@ rule collect_read_counts:
         "--format TSV"
     log:
         "logs/gatk/CollectReadCounts/{sample}.log"
+    threads: 4
     shell:
         "{GATK} CollectReadCounts -I {input.bam} -L {input.intervals} "
         "{params} {GATK_FILTERS} -O {output} 2>{log}"
@@ -217,6 +222,7 @@ rule count_reads_allelic:
         "allelic_depth/{sample}.AD.tsv"
     log:
         "logs/gatk/ASEReadCounter/{sample}.log"
+    threads: 4
     shell:
         "{GATK} ASEReadCounter -I {input.bam} -V {input.intervals} "
         "-R {input.ref} -O {output} {GATK_FILTERS} 2>{log}"

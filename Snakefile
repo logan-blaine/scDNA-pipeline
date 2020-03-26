@@ -100,7 +100,7 @@ rule fastq_to_ubam:
     log:
         "logs/gatk/FastqToSam/{sample}.log"
     shell:
-        "{GATK} FastqToSam {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
+        "{GATK} FastqToSam "
         "-F1 {input.fq1} -F2 {input.fq2} -O {output} "
         "-SM {params.sm} -LB {params.sm} "
         "-RG {wildcards.sample} -PU {wildcards.sample} "

@@ -47,7 +47,7 @@ def get_merged_bams_for_sample(wildcards):
 
 def get_samples_for_group(wildcards):
     names = sample_sheet.query(f'group=="{wildcards.group}"')
-    return = [f'processed_bams/{sample}.bam' for sample in set(names['sample'])]
+    return [f'processed_bams/{sample}.bam' for sample in set(names['sample'])]
 
 
 localrules: counts, svs, metrics, align, filter_structural_variants

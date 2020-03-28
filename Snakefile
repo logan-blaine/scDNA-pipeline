@@ -4,8 +4,8 @@ import os
 
 THREADS_GATK=16
 GATK = config["gatk_cmd"]
-PICARD_MAX_RECORDS=""
-# PICARD_MAX_RECORDS = f'--MAX_RECORDS_IN_RAM {config["max_records"]}'
+
+PICARD_MAX_RECORDS = f'--MAX_RECORDS_IN_RAM {config["max_records"]}'
 PICARD_TMP_DIR = f'--TMP_DIR {config["tmp_dir"]}'
 GATK_FILTERS = ("-RF MappingQualityReadFilter --minimum-mapping-quality 30 "
                 "-RF OverclippedReadFilter --filter-too-short 50")
@@ -47,7 +47,7 @@ def get_merged_bams_for_sample(wildcards):
 
 def get_samples_for_group(wildcards):
     names = sample_sheet.query(f'group=="{wildcards.group}"')
-    return [f'processed_bams/{sample}.bam' for sample in names['sample']]
+    return = [f'processed_bams/{sample}.bam' for sample in set(names['sample'])]
 
 
 localrules: counts, svs, metrics, align, filter_structural_variants

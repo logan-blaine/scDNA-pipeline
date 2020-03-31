@@ -1,5 +1,5 @@
 __default__:
-  mem_gb :   16
+  mem_gb :   24
   cpus: 4
   output: "logs/cluster/%j.log"
 
@@ -7,5 +7,4 @@ bwa_map:
   cpus: 8
 
 call_structural_variants:
-  cpus: 6
-  mem_gb : 24
+  cpus: 12

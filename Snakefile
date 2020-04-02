@@ -282,9 +282,8 @@ rule recount_svs:
     input:
         "svaba/{group}.svaba.prefiltered.somatic.sv.vcf",
         get_samples_for_group
-    threads: 1
-    # threads:
-    #     lambda wildcards, input: len(input) - 1
+    threads:
+        lambda wildcards, input: len(input) - 1
     script:
         "scripts/recount_svs.py"
 

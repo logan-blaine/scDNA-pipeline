@@ -114,7 +114,7 @@ def recount_on_file(bam_path):
     return output_path
 
 
-with multiprocessing.Pool(min(len(bam_paths), 8)) as p:
+with multiprocessing.Pool(snakemake.threads) as p:
     out_files = p.map(recount_on_file, bam_paths)
 
 tables = (pd.read_table(o, index_col=None) for o in out_files)

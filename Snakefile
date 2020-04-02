@@ -61,7 +61,7 @@ rule counts:
 
 rule svs:
     input:
-        expand("svaba/{group}.svaba.refiltered.somatic.sv.vcf", group=all_groups)
+        expand("svaba/{group}.somatic.sv.counts.txt", group=all_groups)
 
 
 rule metrics:
@@ -268,13 +268,25 @@ rule filter_structural_variants:
     log:
         "logs/bcftools/{group}.log"
     output:
-        "svaba/{group}.svaba.refiltered.somatic.sv.vcf"
+        "svaba/{group}.svaba.prefiltered.somatic.sv.vcf"
     params:
         "-i '(SPAN>150000 | (DISC_MAPQ>30 & SPAN==-1)) ",
-        "& N_PASS(AD>0)==1 & SR>0 & DR>0 & AD >= 3'"
+        "& N_PASS(AD>0)==1 & SR>0'"
     # group: "svaba"
     shell:
         "bcftools view {input} {params} -o {output} 2>{log}"
+
+rule recount_svs:
+    output:
+        "svaba/{group}.somatic.sv.counts.txt"
+    input:
+        "svaba/{group}.svaba.prefiltered.somatic.sv.vcf",
+        get_samples_for_group
+    threads: 1
+    # threads:
+    #     lambda wildcards, input: len(input) - 1
+    script:
+        "scripts/recount_svs.py"
 
 rule call_short_variants:
     input:

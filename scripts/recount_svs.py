@@ -1,5 +1,8 @@
 from pysam import VariantFile, AlignmentFile, VariantRecord
+import pandas as pd
 import re
+import os
+import multiprocessing
 
 
 class StrandedRecord:
@@ -33,14 +36,6 @@ class Pair:
         else:
             raise(RuntimeError)
 
-    def span(self):
-        if not self.is_paired():
-            return None
-        elif self.is_interchromosomal():
-            return float('inf')
-        else:
-            return abs(self.mate1.pos - self.mate2.pos)
-
     def get_pair(self):
         assert(self.is_paired())
         str1 = int(self.mate1.alts[0][0] in 'actgACTG')
@@ -65,46 +60,73 @@ class PairedVcf:
             self.pairs[id] = p
         self.pairs[id].add_mate(rec)
 
-    def get_pairs(self, min_span=1e5):
-        return {p.get_pair() for id, p in pc.pairs.items()
-                if p.is_paired() and p.span() > min_span}
-        # if p.is_paired() and (p.is_interchromosomal() or p.span()>min_span)}
+    def get_pairs(self):
+        return {p.get_pair() for p in pc.pairs.values() if p.is_paired()}
 
 
-if __name__ == '__main__':
-    chr_regex = re.compile('chr[0-9XY]+')
-    # bam_path = 'MN_SI_181116_P1_22_1.bam'
-    # vcf_path = 'MN_SI_181116_P1_22.svaba.prefiltered.somatic.sv.vcf'
-    # output_path = 'MN_SI_181116_P1_22_1.sv_count.tsv'
-    bam_path = snakemake.input[0]
-    vcf_path = snakemake.input[1]
-    output_path = snakemake.output[0]
+chr_regex = re.compile('chr[0-9XY]+')
+win_size = 2000
+tmp_ext = ".tmp.txt"
 
+vcf_path = snakemake.input[0]
+bam_paths = snakemake.input[1:]
+output_path = snakemake.output[0]
+# win_size = snakemake.params["window_size"]
+
+pc = PairedVcf(vcf_path)
+pairs = pc.get_pairs()
+
+
+def recount_on_file(bam_path):
     bam = AlignmentFile(bam_path)
-    pc = PairedVcf(vcf_path)
+    sample, ext = os.path.splitext(bam_path)
+    assert(ext == ".bam")
+    output_path = sample + tmp_ext
+    ret = ['\t'.join(['chr1', 'pos1', 'str1', 'chr2',
+                      'pos2', 'str2', 'count', 'sample'])]
 
-    ret=['\t'.join(['chr1','pos1','str1','chr2','pos2','str2','TotalCount'])]
-    for paired_rec1, paired_rec2 in pc.get_pairs():
+    for paired_rec1, paired_rec2 in pairs:
         rec1 = paired_rec1.rec
         rec2 = paired_rec2.rec
-        if rec1.chrom!='chr5' or rec2.chrom!='chr5':
+        str1 = str(paired_rec1.strand * 2 - 1)
+        str2 = str(paired_rec2.strand * 2 - 1)
+        loc1 = paired_rec1.get_upstream_region(win_size)
+        loc2 = paired_rec2.get_upstream_region(win_size)
+
+        # DEBUG ONLY
+        if rec1.chrom != 'chr5' or rec2.chrom != 'chr5':
             continue
-        loc1 = paired_rec1.get_upstream_region(2000)
-        loc2 = paired_rec2.get_upstream_region(2000)
+
         loc1_ids = {rec.query_name for rec in bam.fetch(
             region=loc1, multiple_iterators=True)}
         loc2_ids = {rec.query_name for rec in bam.fetch(
             region=loc2, multiple_iterators=True)}
         supp_reads = loc1_ids.intersection(loc2_ids)
-        if not supp_reads:
-            continue
-        line = '\t'.join([rec1.chrom, str(rec1.pos), str(paired_rec1.strand*2-1),
-                         rec2.chrom, str(rec2.pos), str(paired_rec2.strand*2-1),
-                         str(len(supp_reads))])
-        ret.append(line)
-    with open(output_path, 'w') as f:
-        f.write('\n'.join(ret)+'\n')
+        if supp_reads:
+            tokens = [rec1.chrom, str(rec1.pos), str1,
+                      rec2.chrom, str(rec2.pos), str2,
+                      str(len(supp_reads)), sample]
+            ret.append('\t'.join(tokens))
 
-    # p = Pool(4)
-    # res = [t for t in p.map(get_supporting_reads, range(10)) if t]
-    # res
+    with open(output_path, 'w') as f:
+        f.write('\n'.join(ret) + '\n')
+    return output_path
+
+
+with multiprocessing.Pool(min(len(bam_paths), 8)) as p:
+    out_files = p.map(recount_on_file, bam_paths)
+
+tables = (pd.read_table(o, index_col=None) for o in out_files)
+
+(
+    pd.concat(tables)
+    .sort_values(["chr1", "pos1", "str1", "chr2", "pos2", "str2", "sample"])
+    .to_csv(output_path, index_label="idx")
+)
+
+# For debugging only:
+# os.chdir('/Users/pellmanlab/GenomeAnalysis/svbam')
+# bam_path = 'MN_SI_181116_P1_22_1.bam'
+# bam_paths = ['MN_SI_181116_P1_22_1.bam', 'MN_SI_181116_P1_22_2.bam']
+# vcf_path = 'MN_SI_181116_P1_22.svaba.prefiltered.somatic.sv.vcf'
+# output_path = 'MN_SI_181116_P1_22_1.sv_count.csv'

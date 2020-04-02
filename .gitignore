@@ -2,7 +2,9 @@
 
 !.gitignore
 !Snakefile
-!*.yaml
-!*.sh
+!cluster.yaml
+!config_template.yaml
+!samples.schema.yaml
+!slurm_template.sh
 !scripts/
 !scripts/*

@@ -8,3 +8,6 @@ bwa_map:
 
 call_structural_variants:
   cpus: 12
+
+recount_svs:
+  cpus: 8

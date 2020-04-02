@@ -79,9 +79,10 @@ pairs = pc.get_pairs()
 
 def recount_on_file(bam_path):
     bam = AlignmentFile(bam_path)
-    sample, ext = os.path.splitext(bam_path)
+    dir_sample, ext = os.path.splitext(bam_path)
+    sample=os.path.basename(dir_sample)
     assert(ext == ".bam")
-    output_path = sample + tmp_ext
+    output_path = dir_sample + tmp_ext
     ret = ['\t'.join(['chr1', 'pos1', 'str1', 'chr2',
                       'pos2', 'str2', 'count', 'sample'])]
 
@@ -94,8 +95,8 @@ def recount_on_file(bam_path):
         loc2 = paired_rec2.get_upstream_region(win_size)
 
         # DEBUG ONLY
-        if rec1.chrom != 'chr5' or rec2.chrom != 'chr5':
-            continue
+        # if rec1.chrom != 'chr5' or rec2.chrom != 'chr5':
+        #     continue
 
         loc1_ids = {rec.query_name for rec in bam.fetch(
             region=loc1, multiple_iterators=True)}

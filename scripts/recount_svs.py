@@ -114,7 +114,7 @@ def recount_on_file(bam_path):
         if n_shared:
             tokens = [rec1.chrom, str(rec1.pos), str1,
                       rec2.chrom, str(rec2.pos), str2,
-                      n_shared, n_shared_hq, sample]
+                      str(n_shared), str(n_shared_hq), sample]
             ret.append('\t'.join(tokens))
 
     with open(output_path, 'w') as f:

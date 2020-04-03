@@ -80,15 +80,16 @@ pairs = pc.get_pairs()
 def recount_on_file(bam_path):
     bam = AlignmentFile(bam_path)
     dir_sample, ext = os.path.splitext(bam_path)
-    sample=os.path.basename(dir_sample)
+    sample = os.path.basename(dir_sample)
     assert(ext == ".bam")
     output_path = dir_sample + tmp_ext
     ret = ['\t'.join(['chr1', 'pos1', 'str1', 'chr2',
-                      'pos2', 'str2', 'count', 'sample'])]
+                      'pos2', 'str2', 'count', 'hq_count', 'sample'])]
 
     for paired_rec1, paired_rec2 in pairs:
         rec1 = paired_rec1.rec
         rec2 = paired_rec2.rec
+        interchrom = (rec1.chrom != rec1.chrom)
         str1 = str(paired_rec1.strand * 2 - 1)
         str2 = str(paired_rec2.strand * 2 - 1)
         loc1 = paired_rec1.get_upstream_region(win_size)
@@ -98,15 +99,22 @@ def recount_on_file(bam_path):
         # if rec1.chrom != 'chr5' or rec2.chrom != 'chr5':
         #     continue
 
-        loc1_ids = {rec.query_name for rec in bam.fetch(
-            region=loc1, multiple_iterators=True)}
-        loc2_ids = {rec.query_name for rec in bam.fetch(
-            region=loc2, multiple_iterators=True)}
-        supp_reads = loc1_ids.intersection(loc2_ids)
-        if supp_reads:
+        bam1 = list(bam.fetch(region=loc1, multiple_iterators=True))
+        bam2 = list(bam.fetch(region=loc2, multiple_iterators=True))
+        id1 = {rec.query_name for rec in bam1}
+        id2 = {rec.query_name for rec in bam2}
+        n_shared = len(id1.intersection(id2))
+
+        hq_bam1 = {rec.query_name for rec in bam1 if
+                   rec.mapq >= 30 and not rec.is_supplementary}
+        hq_bam2 = {rec.query_name for rec in bam2 if
+                   rec.mapq >= 30 and not rec.is_supplementary}
+        n_shared_hq = len(hq_bam1.intersection(hq_bam2))
+
+        if n_shared:
             tokens = [rec1.chrom, str(rec1.pos), str1,
                       rec2.chrom, str(rec2.pos), str2,
-                      str(len(supp_reads)), sample]
+                      n_shared, n_shared_hq, sample]
             ret.append('\t'.join(tokens))
 
     with open(output_path, 'w') as f:

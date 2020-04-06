@@ -64,7 +64,7 @@ class PairedVcf:
         return {p.get_pair() for p in pc.pairs.values() if p.is_paired()}
 
 
-chr_regex = re.compile('chr[0-9XY]+')
+chr_regex = re.compile('^chr[0-9XY]+$')
 win_size = 2000
 tmp_ext = ".tmp.txt"
 

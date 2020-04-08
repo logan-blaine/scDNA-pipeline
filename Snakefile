@@ -140,7 +140,7 @@ rule mark_duplicates:
     params:
         so = "queryname",
         px_dist = 2500,
-        bams = lambda(wildcards, input): ' '.join([f"-I {b}" for b in input.bam])
+        bams = lambda wildcards, input: ' '.join([f"-I {b}" for b in input.bam])
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
     threads: THREADS_GATK
@@ -249,7 +249,7 @@ rule call_structural_variants:
         # germline = config['germline_svs']
     threads: 8
     params:
-        bams = lambda(wildcards, input): ' '.join([f"-t {b}" for b in input.bam]),
+        bams = lambda wildcards, input: ' '.join([f"-t {b}" for b in input.bam]),
         normal = "-n " + config['normal'],
         flags = "--min-overlap 25"
     log:
@@ -328,7 +328,7 @@ rule call_short_variants:
         # germline = config['germline_svs']
     threads: 8
     params:
-        bams = lambda(wildcards, input): ' '.join([f"-I {b}" for b in input.bam])
+        bams = lambda wildcards, input: ' '.join([f"-I {b}" for b in input.bam])
         # normal = "-n " + config['normal'],
         # flags = "--min-overlap 25"
     log:

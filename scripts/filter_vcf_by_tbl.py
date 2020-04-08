@@ -21,7 +21,7 @@ tbl_deduped['n']=tbl_deduped.groupby(chr_pos_str)['sample'].transform('count')
 tbl_filtered=tbl_deduped.query(f'n==1 and count>={min_count} and hq_count>0')
 
 vcf_head=VariantFile(vcf_path).header
-vcf_head.add_line(f'##command=recount_svs.py {vcf_path} {bam_paths}')
+vcf_head.add_line(f'##command=recount_svs.py {vcf_path} {table_path} > {output_vcf}')
 vcf_out=VariantFile(output_vcf, mode='w', header=vcf_head)
 
 for _, row in tbl_filtered.iterrows():

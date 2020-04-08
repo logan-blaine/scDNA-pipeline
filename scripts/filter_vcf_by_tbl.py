@@ -5,7 +5,7 @@ import pandas as pd
 
 vcf_path = snakemake.input[0]
 table_path = snakemake.input[1]
-output_vcf = snakemake.output[1]
+output_vcf = snakemake.output[0]
 min_count = 3
 # win_size = snakemake.params['window_size']
 

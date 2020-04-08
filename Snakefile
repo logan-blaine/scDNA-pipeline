@@ -38,17 +38,17 @@ os.makedirs("logs/cluster", exist_ok=True)
 
 def get_sample_from_prefix(wildcards):
     entries = sample_sheet.query(f'prefix=="{wildcards.sample}"')
-    return entries['sample'].iloc[0]
+    return(entries['sample'].iloc[0])
 
 
 def get_merged_bams_for_sample(wildcards):
     entries = sample_sheet.query(f'sample=="{wildcards.sample}"')
-    return [f'merged_bams/{p}.bam' for p in entries['prefix']]
+    return([f'merged_bams/{p}.bam' for p in entries['prefix']])
 
 
 def get_samples_for_group(wildcards):
     names = sample_sheet.query(f'group=="{wildcards.group}"')
-    return [f'processed_bams/{sample}.bam' for sample in set(names['sample'])]
+    return([f'processed_bams/{sample}.bam' for sample in set(names['sample'])])
 
 
 localrules: counts, svs, metrics, align, filter_structural_variants, refilter_vcf, refilter_vcf_final
@@ -140,8 +140,7 @@ rule mark_duplicates:
     params:
         so = "queryname",
         px_dist = 2500,
-        def bams(wildcards, input): return ' '.join(
-            [f"-I {b}" for b in input.bam])
+        bams = lambda(wildcards, input): ' '.join([f"-I {b}" for b in input.bam])
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
     threads: THREADS_GATK
@@ -250,8 +249,7 @@ rule call_structural_variants:
         # germline = config['germline_svs']
     threads: 8
     params:
-        def bams(wildcards, input): return ' '.join(
-            [f"-t {b}" for b in input.bam]),
+        bams = lambda(wildcards, input): ' '.join([f"-t {b}" for b in input.bam]),
         normal = "-n " + config['normal'],
         flags = "--min-overlap 25"
     log:
@@ -330,8 +328,7 @@ rule call_short_variants:
         # germline = config['germline_svs']
     threads: 8
     params:
-        def bams(wildcards, input): return ' '.join(
-            [f"-I {b}" for b in input.bam])
+        bams = lambda(wildcards, input): ' '.join([f"-I {b}" for b in input.bam])
         # normal = "-n " + config['normal'],
         # flags = "--min-overlap 25"
     log:

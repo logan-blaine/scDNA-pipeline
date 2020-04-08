@@ -2,7 +2,7 @@ import pandas as pd
 import os
 # from snakemake.utils import validate
 
-THREADS_GATK = 16
+THREADS_GATK = 12
 GATK = config["gatk_cmd"]
 
 PICARD_MAX_RECORDS = f'--MAX_RECORDS_IN_RAM {config["max_records"]}'
@@ -62,7 +62,8 @@ rule counts:
 
 rule svs:
     input:
-        expand("svaba/{group}.somatic.sv.counts.csv", group=all_groups)
+        expand("svaba2/{group}.svaba.filtered.somatic.sv.vcf", group=all_groups)
+        # expand("svaba/{group}.somatic.sv.counts.csv", group=all_groups)
 
 
 rule metrics:

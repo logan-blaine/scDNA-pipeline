@@ -2,7 +2,7 @@ import pandas as pd
 import os
 # from snakemake.utils import validate
 
-THREADS_GATK = 12
+MAX_THREADS = 16
 GATK = config["gatk_cmd"]
 
 PICARD_MAX_RECORDS = f'--MAX_RECORDS_IN_RAM {config["max_records"]}'
@@ -103,7 +103,7 @@ rule fastq_to_ubam:
         platform = "illumina"
     log:
         "logs/gatk/FastqToSam/{sample}.log"
-    threads: THREADS_GATK
+    threads: MAX_THREADS
     shell:
         "{GATK} FastqToSam "
         "-F1 {input.fq1} -F2 {input.fq2} -O {output} "
@@ -125,7 +125,7 @@ rule merge_ubam:
     params:
         "-SO unsorted",
         "-MAX_GAPS -1"
-    threads: THREADS_GATK
+    threads: MAX_THREADS
     shell:
         "{GATK} MergeBamAlignment {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
         "-R {input.ref} -O {output} {params} "
@@ -144,7 +144,7 @@ rule mark_duplicates:
         bams = lambda wildcards, input: ' '.join([f"-I {b}" for b in input.bam])
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
-    threads: THREADS_GATK
+    threads: MAX_THREADS
     shell:
         "{GATK} MarkDuplicates {PICARD_TMP_DIR} "
         "--OPTICAL_DUPLICATE_PIXEL_DISTANCE {params.px_dist} "
@@ -181,7 +181,7 @@ rule collect_metrics:
         "--PROGRAM CollectGcBiasMetrics"
     log:
         "logs/gatk/CollectMultipleMetrics/{sample}.log"
-    threads: THREADS_GATK
+    threads: MAX_THREADS
     shell:
         "{GATK} CollectMultipleMetrics {PICARD_TMP_DIR} {params} "
         "-I {input.bam} -O metrics/{wildcards.sample} -R {input.ref} 2>{log}"
@@ -198,7 +198,7 @@ rule collect_read_counts:
         "--format TSV"
     log:
         "logs/gatk/CollectReadCounts/{sample}.log"
-    threads: THREADS_GATK
+    threads: MAX_THREADS
     shell:
         "{GATK} CollectReadCounts -I {input.bam} -L {input.intervals} "
         "{params} {GATK_FILTERS} -O {output} 2>{log}"
@@ -225,7 +225,7 @@ rule count_reads_allelic:
         "allelic_depth/{sample}.AD.tsv"
     log:
         "logs/gatk/ASEReadCounter/{sample}.log"
-    threads: THREADS_GATK
+    threads: MAX_THREADS
     shell:
         "{GATK} ASEReadCounter -I {input.bam} -V {input.intervals} "
         "-R {input.ref} -O {output} {GATK_FILTERS} 2>{log}"
@@ -285,7 +285,7 @@ rule recount_svs:
         "svaba/{group}.svaba.prefiltered.somatic.sv.vcf",
         get_samples_for_group
     threads:
-        lambda wildcards, input: min(8, len(input) - 1)
+        lambda wildcards, input: min(MAX_THREADS, len(input) - 1)
     script:
         "scripts/recount_svs.py"
 
@@ -306,7 +306,7 @@ rule joint_call_svs:
         "svaba/{group}.svaba.filtered.somatic.sv.vcf",
         all_bams
     threads:
-        lambda wildcards, input: min(8, len(input) - 1)
+        lambda wildcards, input: min(MAX_THREADS, len(input) - 1)
     script:
         "scripts/recount_svs.py"
 

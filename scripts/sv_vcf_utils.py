@@ -64,4 +64,4 @@ class PairedVcf:
         self.pairs[id].add_mate(rec)
 
     def get_pairs(self):
-        return {str(p): p for p in pc.pairs.values() if p.is_paired()}
+        return {str(p): p for p in self.pairs.values() if p.is_paired()}

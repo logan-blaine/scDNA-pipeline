@@ -47,14 +47,16 @@ def recount_on_file(bam_path):
 
         bam1 = list(bam.fetch(region=loc1, multiple_iterators=True))
         bam2 = list(bam.fetch(region=loc2, multiple_iterators=True))
-        id1 = {rec.query_name for rec in bam1}
-        id2 = {rec.query_name for rec in bam2}
+        id1 = {rec.query_name for rec in bam1 if not rec.is_duplicate}
+        id2 = {rec.query_name for rec in bam2 if not rec.is_duplicate}
         n_shared = len(id1.intersection(id2))
 
         hq_bam1 = {rec.query_name for rec in bam1 if rec.mapq >= 30
-                   and not (rec.is_supplementary or rec.is_secondary)}
+                   and not (rec.is_supplementary or rec.is_secondary
+                            or rec.mate_is_unmapped or rec.is_duplicate)}
         hq_bam2 = {rec.query_name for rec in bam2 if rec.mapq >= 30
-                   and not (rec.is_supplementary or rec.is_secondary)}
+                   and not (rec.is_supplementary or rec.is_secondary
+                            or rec.mate_is_unmapped or rec.is_duplicate)}
         n_shared_hq = len(hq_bam1.intersection(hq_bam2))
 
         if n_shared:

@@ -51,10 +51,10 @@ def recount_on_file(bam_path):
         id2 = {rec.query_name for rec in bam2}
         n_shared = len(id1.intersection(id2))
 
-        hq_bam1 = {rec.query_name for rec in bam1 if
-                   rec.mapq >= 30 and not rec.is_supplementary}
-        hq_bam2 = {rec.query_name for rec in bam2 if
-                   rec.mapq >= 30 and not rec.is_supplementary}
+        hq_bam1 = {rec.query_name for rec in bam1 if rec.mapq >= 30
+                   and not (rec.is_supplementary or rec.is_secondary)}
+        hq_bam2 = {rec.query_name for rec in bam2 if rec.mapq >= 30
+                   and not (rec.is_supplementary or rec.is_secondary)}
         n_shared_hq = len(hq_bam1.intersection(hq_bam2))
 
         if n_shared:

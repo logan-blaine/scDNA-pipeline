@@ -2,7 +2,7 @@ import pandas as pd
 import os
 # from snakemake.utils import validate
 
-THREADS_GATK=16
+THREADS_GATK = 16
 GATK = config["gatk_cmd"]
 
 PICARD_MAX_RECORDS = f'--MAX_RECORDS_IN_RAM {config["max_records"]}'
@@ -12,7 +12,8 @@ GATK_FILTERS = ("-RF MappingQualityReadFilter --minimum-mapping-quality 30 "
 
 
 sample_sheet = pd.read_table(config['samples'], sep=None)
-all_samples=set(sample_sheet['sample'])
+all_samples = set(sample_sheet['sample'])
+all_bams = [f'processed_bams/{sample}.bam' for sample in all_samples]
 all_groups = list(set(sample_sheet['group']))
 
 # sample_sheet=pd.read_table('samples.csv', sep=None)
@@ -50,7 +51,7 @@ def get_samples_for_group(wildcards):
     return [f'processed_bams/{sample}.bam' for sample in set(names['sample'])]
 
 
-localrules: counts, svs, metrics, align, filter_structural_variants
+localrules: counts, svs, metrics, align, filter_structural_variants, refilter_vcf, refilter_vcf_final
 
 
 rule counts:
@@ -61,7 +62,7 @@ rule counts:
 
 rule svs:
     input:
-        expand("svaba/{group}.somatic.sv.counts.txt", group=all_groups)
+        expand("svaba/{group}.somatic.sv.counts.csv", group=all_groups)
 
 
 rule metrics:
@@ -78,8 +79,8 @@ rule align:
 rule bwa_map:
     input:
         config['reference'],
-        fq1="data/{sample}.unmapped.1.fastq.gz",
-        fq2="data/{sample}.unmapped.2.fastq.gz"
+        fq1 = "data/{sample}.unmapped.1.fastq.gz",
+        fq2 = "data/{sample}.unmapped.2.fastq.gz"
     output:
         temp("mapped_reads/{sample}.bam")
     log:
@@ -92,8 +93,8 @@ rule bwa_map:
 
 rule fastq_to_ubam:
     input:
-        fq1="data/{sample}.unmapped.1.fastq.gz",
-        fq2="data/{sample}.unmapped.2.fastq.gz"
+        fq1 = "data/{sample}.unmapped.1.fastq.gz",
+        fq2 = "data/{sample}.unmapped.2.fastq.gz"
     output:
         temp("ubams/{sample}.bam")
     params:
@@ -132,14 +133,15 @@ rule merge_ubam:
 
 rule mark_duplicates:
     input:
-        bam=get_merged_bams_for_sample
+        bam = get_merged_bams_for_sample
     output:
         bam = temp("deduped_bams/{sample}.bam"),
         txt = "metrics/{sample}.dup_metrics.txt"
     params:
         so = "queryname",
         px_dist = 2500,
-        bams = lambda wildcards, input: ' '.join([f"-I {b}" for b in input.bam])
+        def bams(wildcards, input): return ' '.join(
+            [f"-I {b}" for b in input.bam])
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
     threads: THREADS_GATK
@@ -248,7 +250,8 @@ rule call_structural_variants:
         # germline = config['germline_svs']
     threads: 8
     params:
-        bams = lambda wildcards, input: ' '.join([f"-t {b}" for b in input.bam]),
+        def bams(wildcards, input): return ' '.join(
+            [f"-t {b}" for b in input.bam]),
         normal = "-n " + config['normal'],
         flags = "--min-overlap 25"
     log:
@@ -278,14 +281,46 @@ rule filter_structural_variants:
 
 rule recount_svs:
     output:
-        "svaba/{group}.somatic.sv.counts.txt"
+        "svaba/{group}.somatic.sv.counts.csv"
     input:
         "svaba/{group}.svaba.prefiltered.somatic.sv.vcf",
         get_samples_for_group
     threads:
-        lambda wildcards, input: len(input) - 1
+        lambda wildcards, input: min(8, len(input) - 1)
     script:
         "scripts/recount_svs.py"
+
+rule refilter_vcf:
+    input:
+        "svaba/{group}.svaba.prefiltered.somatic.sv.vcf",
+        "svaba/{group}.somatic.sv.counts.csv"
+    output:
+        "svaba/{group}.svaba.filtered.somatic.sv.vcf"
+    threads: 1
+    script:
+        "scripts/filter_vcf_by_tbl.py"
+
+rule joint_call_svs:
+    output:
+        "svaba2/{group}.somatic.sv.counts.csv"
+    input:
+        "svaba/{group}.svaba.filtered.somatic.sv.vcf",
+        all_bams
+    threads:
+        lambda wildcards, input: min(8, len(input) - 1)
+    script:
+        "scripts/recount_svs.py"
+
+rule refilter_vcf_final:
+    input:
+        "svaba/{group}.svaba.filtered.somatic.sv.vcf",
+        "svaba2/{group}.somatic.sv.counts.csv"
+    output:
+        "svaba2/{group}.svaba.filtered.somatic.sv.vcf"
+    threads: 1
+    script:
+        "scripts/filter_vcf_by_tbl.py"
+
 
 rule call_short_variants:
     input:
@@ -295,7 +330,8 @@ rule call_short_variants:
         # germline = config['germline_svs']
     threads: 8
     params:
-        bams = lambda wildcards, input: ' '.join([f"-I {b}" for b in input.bam])
+        def bams(wildcards, input): return ' '.join(
+            [f"-I {b}" for b in input.bam])
         # normal = "-n " + config['normal'],
         # flags = "--min-overlap 25"
     log:

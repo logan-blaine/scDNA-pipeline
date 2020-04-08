@@ -7,4 +7,5 @@
 !samples.schema.yaml
 !slurm_template.sh
 !scripts/
-!scripts/*
+!scripts/*.py
+!scripts/*.R

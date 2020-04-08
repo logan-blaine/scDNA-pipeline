@@ -17,14 +17,13 @@ tmp_ext = '.tmp.txt'
 
 pc = PairedVcf(vcf_path)
 pairs = pc.get_pairs()
-
+output_dir = os.path.dirname(output_txt)
 
 def recount_on_file(bam_path):
     bam = AlignmentFile(bam_path)
-    dir_sample, ext = os.path.splitext(bam_path)
-    sample = os.path.basename(dir_sample)
+    sample, ext = os.path.splitext(os.path.basename(bam_path))
     assert(ext == '.bam')
-    output_path = dir_sample + tmp_ext
+    output_path = os.path.join(output_dir, sample + tmp_ext)
     ret = ['\t'.join(['chr1', 'pos1', 'str1', 'chr2',
                       'pos2', 'str2', 'count', 'hq_count', 'sample'])]
 

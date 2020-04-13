@@ -278,12 +278,13 @@ rule filter_structural_variants:
     shell:
         "bcftools view {input} {params} -o {output} 2>{log}"
 
-rule recount_svs:
+rule recount_somatic_svs:
     output:
         "svaba/{group}.somatic.sv.counts.csv"
     input:
         "svaba/{group}.svaba.prefiltered.somatic.sv.vcf",
-        get_samples_for_group
+        get_samples_for_group,
+        config['normal']
     threads: 4
     script:
         "scripts/recount_svs.py"
@@ -298,7 +299,7 @@ rule refilter_vcf:
     script:
         "scripts/filter_vcf_by_tbl.py"
 
-rule joint_call_svs:
+rule joint_call_somatic_svs:
     output:
         "svaba2/{group}.somatic.sv.counts.csv"
     input:

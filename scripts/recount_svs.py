@@ -29,7 +29,7 @@ def recount_on_file(bam_path):
     assert(ext == '.bam')
     output_path = os.path.join(temp_dir, sample + tmp_ext)
     ret = ['\t'.join(['chr1', 'pos1', 'str1', 'chr2',
-                      'pos2', 'str2', 'count', 'hq_count', 'sample'])]
+                      'pos2', 'str2', 'count', 'hq_count', 'raw_count', 'sample'])]
 
     for pair in pairs.values():
         paired_rec1, paired_rec2 = pair.get_pair()
@@ -47,22 +47,26 @@ def recount_on_file(bam_path):
 
         bam1 = list(bam.fetch(region=loc1, multiple_iterators=True))
         bam2 = list(bam.fetch(region=loc2, multiple_iterators=True))
+
+        raw1 = {rec.query_name for rec in bam1}
+        raw2 = {rec.query_name for rec in bam2}
+        n_shared_raw = len(raw1.intersection(raw2))
+
         id1 = {rec.query_name for rec in bam1 if not rec.is_duplicate}
         id2 = {rec.query_name for rec in bam2 if not rec.is_duplicate}
         n_shared = len(id1.intersection(id2))
 
         hq_bam1 = {rec.query_name for rec in bam1 if rec.mapq >= 30
-                   and not (rec.is_supplementary or rec.is_secondary
-                            or rec.mate_is_unmapped or rec.is_duplicate)}
+                   and not (rec.is_supplementary or rec.is_secondary or rec.is_duplicate)}
         hq_bam2 = {rec.query_name for rec in bam2 if rec.mapq >= 30
-                   and not (rec.is_supplementary or rec.is_secondary
-                            or rec.mate_is_unmapped or rec.is_duplicate)}
+                   and not (rec.is_supplementary or rec.is_secondary or rec.is_duplicate)}
         n_shared_hq = len(hq_bam1.intersection(hq_bam2))
 
         if n_shared:
             tokens = [rec1.chrom, str(rec1.pos), str1,
                       rec2.chrom, str(rec2.pos), str2,
-                      str(n_shared), str(n_shared_hq), sample]
+                      str(n_shared), str(n_shared_hq), str(n_shared_raw),
+                      sample]
             ret.append('\t'.join(tokens))
 
     bam.close()

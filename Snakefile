@@ -2,7 +2,8 @@ import pandas as pd
 import os
 # from snakemake.utils import validate
 
-MAX_THREADS = 16
+GATK_THREADS = 4
+MAX_THREADS = 8
 GATK = config["gatk_cmd"]
 
 PICARD_MAX_RECORDS = f'--MAX_RECORDS_IN_RAM {config["max_records"]}'
@@ -86,7 +87,7 @@ rule bwa_map:
         temp("mapped_reads/{sample}.bam")
     log:
         "logs/bwa_mem/{sample}.log"
-    threads: 16
+    threads: MAX_THREADS
     shell:
         "bwa mem -Y -M -t {threads} {input} 2> {log} "
         " | samtools view -b - > {output}"
@@ -103,7 +104,7 @@ rule fastq_to_ubam:
         platform = "illumina"
     log:
         "logs/gatk/FastqToSam/{sample}.log"
-    threads: MAX_THREADS
+    threads: GATK_THREADS
     shell:
         "{GATK} FastqToSam "
         "-F1 {input.fq1} -F2 {input.fq2} -O {output} "
@@ -125,7 +126,7 @@ rule merge_ubam:
     params:
         "-SO unsorted",
         "-MAX_GAPS -1"
-    threads: MAX_THREADS
+    threads: GATK_THREADS
     shell:
         "{GATK} MergeBamAlignment {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
         "-R {input.ref} -O {output} {params} "
@@ -144,7 +145,7 @@ rule mark_duplicates:
         bams = lambda wildcards, input: ' '.join([f"-I {b}" for b in input.bam])
     log:
         "logs/gatk/MarkDuplicates/{sample}.log"
-    threads: MAX_THREADS
+    threads: GATK_THREADS
     shell:
         "{GATK} MarkDuplicates {PICARD_TMP_DIR} "
         "--OPTICAL_DUPLICATE_PIXEL_DISTANCE {params.px_dist} "
@@ -181,7 +182,7 @@ rule collect_metrics:
         "--PROGRAM CollectGcBiasMetrics"
     log:
         "logs/gatk/CollectMultipleMetrics/{sample}.log"
-    threads: MAX_THREADS
+    threads: GATK_THREADS
     shell:
         "{GATK} CollectMultipleMetrics {PICARD_TMP_DIR} {params} "
         "-I {input.bam} -O metrics/{wildcards.sample} -R {input.ref} 2>{log}"
@@ -198,7 +199,7 @@ rule collect_read_counts:
         "--format TSV"
     log:
         "logs/gatk/CollectReadCounts/{sample}.log"
-    threads: MAX_THREADS
+    threads: GATK_THREADS
     shell:
         "{GATK} CollectReadCounts -I {input.bam} -L {input.intervals} "
         "{params} {GATK_FILTERS} -O {output} 2>{log}"
@@ -225,7 +226,7 @@ rule count_reads_allelic:
         "allelic_depth/{sample}.AD.tsv"
     log:
         "logs/gatk/ASEReadCounter/{sample}.log"
-    threads: MAX_THREADS
+    threads: GATK_THREADS
     shell:
         "{GATK} ASEReadCounter -I {input.bam} -V {input.intervals} "
         "-R {input.ref} -O {output} {GATK_FILTERS} 2>{log}"
@@ -248,7 +249,7 @@ rule call_structural_variants:
         bam = get_samples_for_group
         # simple = config['simple_repeats'],
         # germline = config['germline_svs']
-    threads: 8
+    threads: MAX_THREADS
     params:
         bams = lambda wildcards, input: ' '.join([f"-t {b}" for b in input.bam]),
         normal = "-n " + config['normal'],

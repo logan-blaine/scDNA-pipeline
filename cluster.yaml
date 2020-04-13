@@ -1,13 +1,21 @@
 __default__:
-  mem_gb :   24
+  mem_gb :   16
   cpus: 4
   output: "logs/cluster/%j.log"
 
 bwa_map:
+  mem_gb:    24
   cpus: 8
 
 call_structural_variants:
-  cpus: 12
-
-recount_svs:
+  mem_gb:    24
   cpus: 8
+
+recount_somatic_svs:
+  mem_gb :   8
+  cpus: 4
+
+
+joint_call_somatic_svs:
+  mem_gb :   8
+  cpus: 4

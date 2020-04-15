@@ -2,8 +2,8 @@ import pandas as pd
 import os
 # from snakemake.utils import validate
 
-GATK_THREADS = 4
-MAX_THREADS = 8
+GATK_THREADS = 12
+MAX_THREADS = 12
 GATK = config["gatk_cmd"]
 
 PICARD_MAX_RECORDS = f'--MAX_RECORDS_IN_RAM {config["max_records"]}'
@@ -163,13 +163,27 @@ rule sort_bam:
     output:
         bam = "processed_bams/{sample}.bam"
     params:
-        so = "coordinate"
+        tmp = config['tmp_dir']
     log:
         "logs/gatk/SortSam/{sample}.log"
+    threads: MAX_THREADS
     shell:
-        "{GATK} SortSam {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
-        " -I {input} -O {output.bam} -SO {params.so} "
-        "--CREATE_INDEX 2>{log}"
+        "samtools sort {input} -@ {threads} -T {params.tmp} "
+        " -o {output.bam} 2>{log} && samtools index {output.bam}"
+
+# rule sort_bam:
+#     input:
+#         "deduped_bams/{sample}.bam"
+#     output:
+#         bam = "processed_bams/{sample}.bam"
+#     params:
+#         so = "coordinate"
+#     log:
+#         "logs/gatk/SortSam/{sample}.log"
+#     shell:
+#         "{GATK} SortSam {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
+#         " -I {input} -O {output.bam} -SO {params.so} "
+#         "--CREATE_INDEX 2>{log}"
 
 
 rule collect_metrics:

@@ -55,6 +55,11 @@ def get_samples_for_group(wildcards):
 localrules: counts, svs, metrics, align, filter_structural_variants, refilter_vcf, refilter_vcf_final
 
 
+rule align:
+    input:
+        expand("processed_bams/{sample}.bam", sample=all_samples)
+
+
 rule counts:
     input:
         expand("read_depth/{sample}.counts.tsv", sample=all_samples),
@@ -73,64 +78,63 @@ rule metrics:
                sample=all_samples),
 
 
-rule align:
-    input:
-        expand("processed_bams/{sample}.bam", sample=all_samples)
-
-
 rule bwa_map:
     input:
         config['reference'],
         fq1 = "data/{sample}.unmapped.1.fastq.gz",
         fq2 = "data/{sample}.unmapped.2.fastq.gz"
     output:
-        temp("mapped_reads/{sample}.bam")
-    log:
-        "logs/bwa_mem/{sample}.log"
-    threads: MAX_THREADS
-    shell:
-        "bwa mem -Y -M -t {threads} {input} 2> {log} "
-        " | samtools view -b - > {output}"
-
-
-rule fastq_to_ubam:
-    input:
-        fq1 = "data/{sample}.unmapped.1.fastq.gz",
-        fq2 = "data/{sample}.unmapped.2.fastq.gz"
-    output:
-        temp("ubams/{sample}.bam")
-    params:
-        sm = get_sample_from_prefix,
-        platform = "illumina"
-    log:
-        "logs/gatk/FastqToSam/{sample}.log"
-    threads: GATK_THREADS
-    shell:
-        "{GATK} FastqToSam "
-        "-F1 {input.fq1} -F2 {input.fq2} -O {output} "
-        "-SM {params.sm} -LB {params.sm} "
-        "-RG {wildcards.sample} -PU {wildcards.sample} "
-        "-PL {params.platform} 2>{log}"
-
-
-rule merge_ubam:
-    input:
-        ref = config['reference'],
-        ref_dict = config['reference'].rsplit(".", 1)[0] + ".dict",
-        ubam = "ubams/{sample}.bam",
-        bam = "mapped_reads/{sample}.bam"
-    output:
         temp("merged_bams/{sample}.bam")
     log:
-        "logs/gatk/MergeBamAlignment/{sample}.log"
+        "logs/bwa_mem/{sample}.log"
     params:
-        "-SO unsorted",
-        "-MAX_GAPS -1"
-    threads: GATK_THREADS
+        sm = get_sample_from_prefix
+        bwa_threads = lambda wildcards, threads: max(1, threads - 1)
+    threads: MAX_THREADS
     shell:
-        "{GATK} MergeBamAlignment {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
-        "-R {input.ref} -O {output} {params} "
-        "-UNMAPPED {input.ubam} -ALIGNED {input.bam} 2>{log}"
+        "bwa mem -Y -t {params.bwa_threads} {input} 2> {log} "
+        " | samtools addreplacerg - "
+        " -r ID:{wildcards.sample} -r PU:{wildcards.sample} "
+        " -r SM:{params.sm} -r LB:{params.sm} -r PL:illumina -o {output}"
+
+# rule fastq_to_ubam:
+#     input:
+#         fq1 = "data/{sample}.unmapped.1.fastq.gz",
+#         fq2 = "data/{sample}.unmapped.2.fastq.gz"
+#     output:
+#         temp("ubams/{sample}.bam")
+#     params:
+#         sm = get_sample_from_prefix,
+#         platform = "illumina"
+#     log:
+#         "logs/gatk/FastqToSam/{sample}.log"
+#     threads: GATK_THREADS
+#     shell:
+#         "{GATK} FastqToSam "
+#         "-F1 {input.fq1} -F2 {input.fq2} -O {output} "
+#         "-SM {params.sm} -LB {params.sm} "
+#         "-RG {wildcards.sample} -PU {wildcards.sample} "
+#         "-PL {params.platform} 2>{log}"
+#
+#
+# rule merge_ubam:
+#     input:
+#         ref = config['reference'],
+#         ref_dict = config['reference'].rsplit(".", 1)[0] + ".dict",
+#         ubam = "ubams/{sample}.bam",
+#         bam = "mapped_reads/{sample}.bam"
+#     output:
+#         temp("merged_bams/{sample}.bam")
+#     log:
+#         "logs/gatk/MergeBamAlignment/{sample}.log"
+#     params:
+#         "-SO unsorted",
+#         "-MAX_GAPS -1"
+#     threads: GATK_THREADS
+#     shell:
+#         "{GATK} MergeBamAlignment {PICARD_MAX_RECORDS} {PICARD_TMP_DIR} "
+#         "-R {input.ref} -O {output} {params} "
+#         "-UNMAPPED {input.ubam} -ALIGNED {input.bam} 2>{log}"
 
 
 rule mark_duplicates:
@@ -253,7 +257,7 @@ rule call_structural_variants:
     params:
         bams = lambda wildcards, input: ' '.join([f"-t {b}" for b in input.bam]),
         normal = "-n " + config['normal'],
-        flags = "--min-overlap 25"
+        flags = "--min-overlap 15"
     log:
         "svaba/{group}.log"
     output:
@@ -273,8 +277,7 @@ rule filter_structural_variants:
     output:
         "svaba/{group}.svaba.prefiltered.somatic.sv.vcf"
     params:
-        "-i '(SPAN>150000 | (DISC_MAPQ>30 & SPAN==-1)) ",
-        "& N_PASS(AD>0)==1 & SR>0'"
+        "-i '(SPAN>150000 | SPAN==-1) & AD[0]==0'"
     # group: "svaba"
     shell:
         "bcftools view {input} {params} -o {output} 2>{log}"

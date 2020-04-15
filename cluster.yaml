@@ -3,8 +3,8 @@ __default__:
   cpus: 12
   output: "logs/cluster/%j.log"
 
-# bwa_map:
-#   mem_gb:    24
+sort_bam:
+  cpus: 4
 #
 # call_structural_variants:
 #   mem_gb:    24

@@ -52,15 +52,25 @@ def recount_on_file(bam_path):
         raw2 = {rec.query_name for rec in bam2}
         n_shared_raw = len(raw1.intersection(raw2))
 
-        id1 = {rec.query_name for rec in bam1 if not rec.is_duplicate}
-        id2 = {rec.query_name for rec in bam2 if not rec.is_duplicate}
+        bam1_primary = [rec for rec in bam1 if not
+                        (rec.is_duplicate or rec.is_secondary)]
+        bam2_primary = [rec for rec in bam2 if not
+                        (rec.is_duplicate or rec.is_secondary)]
+
+        id1 = {rec.query_name for rec in bam1_primary}
+        id2 = {rec.query_name for rec in bam2_primary}
         n_shared = len(id1.intersection(id2))
 
-        hq_bam1 = {rec.query_name for rec in bam1 if rec.mapq >= 30
-                   and not (rec.is_supplementary or rec.is_secondary or rec.is_duplicate)}
-        hq_bam2 = {rec.query_name for rec in bam2 if rec.mapq >= 30
-                   and not (rec.is_supplementary or rec.is_secondary or rec.is_duplicate)}
-        n_shared_hq = len(hq_bam1.intersection(hq_bam2))
+        bam1_hq = [rec for rec in bam1_primary if rec.mapq >= 30]
+        bam2_hq = [rec for rec in bam2_primary if rec.mapq >= 30]
+
+        bam1_r1 = {rec.query_name for rec in bam1_hq if rec.is_read1}
+        bam1_r2 = {rec.query_name for rec in bam1_hq if rec.is_read2}
+        bam2_r1 = {rec.query_name for rec in bam2_hq if rec.is_read1}
+        bam2_r2 = {rec.query_name for rec in bam2_hq if rec.is_read2}
+        i1 = bam1_r1.intersection(bam2_r2)
+        i2 = bam1_r2.intersection(bam2_r1)
+        n_shared_hq = len(i1) + len(i2)
 
         if n_shared:
             tokens = [rec1.chrom, str(rec1.pos), str1,

@@ -291,7 +291,7 @@ rule filter_structural_variants:
     output:
         "svaba/{group}.svaba.prefiltered.somatic.sv.vcf"
     params:
-        "-i '(SPAN>150000 | SPAN==-1) & AD[0]==0'"
+        "-i '(SPAN>150000 | SPAN==-1) & AD[0]==0 & SECONDARY==0 & MAPQ>30'"
     # group: "svaba"
     shell:
         "bcftools view {input} {params} -o {output} 2>{log}"

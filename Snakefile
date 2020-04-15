@@ -166,9 +166,9 @@ rule sort_bam:
         tmp = config['tmp_dir']
     log:
         "logs/samtools/sort/{sample}.log"
-    threads: MAX_THREADS
+    threads: 4
     shell:
-        "samtools sort {input} -m 1G -@ {threads} -T {params.tmp} "
+        "samtools sort {input} -m 4G -@ {threads} -T {params.tmp} "
         " -o {output.bam} 2>{log} && samtools index {output.bam}"
 
 # rule sort_bam:

@@ -165,10 +165,10 @@ rule sort_bam:
     params:
         tmp = config['tmp_dir']
     log:
-        "logs/gatk/SortSam/{sample}.log"
+        "logs/samtools/sort/{sample}.log"
     threads: MAX_THREADS
     shell:
-        "samtools sort {input} -m 2G -@ {threads} -T {params.tmp} "
+        "samtools sort {input} -m 1G -@ {threads} -T {params.tmp} "
         " -o {output.bam} 2>{log} && samtools index {output.bam}"
 
 # rule sort_bam:

@@ -88,7 +88,7 @@ rule bwa_map:
     log:
         "logs/bwa_mem/{sample}.log"
     params:
-        sm = get_sample_from_prefix
+        sm = get_sample_from_prefix,
         bwa_threads = lambda wildcards, threads: max(1, threads - 1)
     threads: MAX_THREADS
     shell:
@@ -168,7 +168,7 @@ rule sort_bam:
         "logs/gatk/SortSam/{sample}.log"
     threads: MAX_THREADS
     shell:
-        "samtools sort {input} -@ {threads} -T {params.tmp} "
+        "samtools sort {input} -m 2G -@ {threads} -T {params.tmp} "
         " -o {output.bam} 2>{log} && samtools index {output.bam}"
 
 # rule sort_bam:
